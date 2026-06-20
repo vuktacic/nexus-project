@@ -100,10 +100,6 @@ export default function Game({ playerName }: { playerName: string }) {
     canvas.addEventListener("pointercancel", endTouchInput);
 
     function attack() { }
-    function stealMoney() { }
-    function dropMoney() { }
-    function pickupShield() { }
-    function dropShield() { }
 
     let last = performance.now();
     const maxTouchDistance = 90;
@@ -120,6 +116,20 @@ export default function Game({ playerName }: { playerName: string }) {
       if (keys["s"] || keys["arrowdown"]) dy++;
       if (keys["a"] || keys["arrowleft"]) dx--;
       if (keys["d"] || keys["arrowright"]) dx++;
+      // show shield when space held
+      if (keys[" "]) {
+        // show shield
+      }
+
+      if (!keys[" "]) {
+        // hide shield
+      }
+
+      // on click of left mouse button, attack in direction of mouse
+      if (keys["mouse0"]) {
+        // attack in direction of mouse
+      }
+
 
       if (touchInput.active) {
         const touchDx = touchInput.x - touchInput.originX;
