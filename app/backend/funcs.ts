@@ -55,7 +55,7 @@ export async function addPlayer(name: string) {
   };
 }
 
-export async function getGold(shark: boolean) {
+export async function getTeamGold(shark: boolean) {
   const { data, error } = await supabase.from("game").select("*");
 
   if (error) {
@@ -72,6 +72,11 @@ export async function getGold(shark: boolean) {
 
   return gold;
 }
+
+export async function setTeamGold(shark: boolean, amount: number) {
+    const { data, error } = await supabase.from("game").select("*");
+}
+
 export async function getSingleGold(uuid:string){
     const {data,error} = await supabase.from('game').select('gold').eq("uuid",uuid).single();
     if (error){
@@ -79,3 +84,29 @@ export async function getSingleGold(uuid:string){
     }
     return data?.gold;
 }
+
+export async function setSingleGold(uuid:string, amount:number) {
+    const { data, error } = await supabase.from("game").update({ gold: amount }).eq("uuid", uuid);
+
+    if (error) {
+        console.error(error.message);
+    }
+
+    return data;
+}
+
+export async function getShield(uuid: string) {}
+
+export async function setShield(uuid: string, shieldUp: boolean) {}
+
+export async function getPosition(uuid: string) {}
+
+export async function setPosition(uuid: string, position: { x: number; y: number }) {}
+
+export async function getName(uuid: string) {}
+
+export async function setName(uuid: string, name: string) {}
+
+export async function getUUID(uuid: string) {}
+
+export async function setUUID(uuid: string, newUUID: string) {}
