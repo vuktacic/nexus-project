@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { supabase } from "../backend/supabase";
 
 const WORLD_WIDTH = 3000;
 const WORLD_HEIGHT = 3000;
@@ -31,10 +32,28 @@ export default function Game() {
 
     const keys: Record<string, boolean> = {};
 
-    const player = {
+    const localPlayer = {
       x: WORLD_WIDTH / 2,
       y: WORLD_HEIGHT / 2,
     };
+
+    const players: Record<string, { x: number, y: number, dx: number, dy: number, lastUpdate: number }> = {};
+
+    const channel = supabase.channel('game_room')
+      .on(
+        'broadcast',
+        { event: 'joystick' },
+        (payload) => {
+          const { uuid, dx, dy } = payload.payload;
+          if (!players[uuid]) {
+            players[uuid] = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, dx: 0, dy: 0, lastUpdate: performance.now() };
+          }
+          players[uuid].dx = dx;
+          players[uuid].dy = dy;
+          players[uuid].lastUpdate = performance.now();
+        }
+      )
+      .subscribe();
 
     function keyDown(e: KeyboardEvent) {
       keys[e.key.toLowerCase()] = true;
@@ -46,6 +65,9 @@ export default function Game() {
 
     window.addEventListener("keydown", keyDown);
     window.addEventListener("keyup", keyUp);
+
+    const playerImage = new Image();
+    playerImage.src = "/assets/sprites/cat-removebg-preview.png";
 
     let last = performance.now();
 
@@ -68,28 +90,43 @@ export default function Game() {
         dy /= len;
       }
 
-      player.x += dx * PLAYER_SPEED * dt;
-      player.y += dy * PLAYER_SPEED * dt;
+      localPlayer.x += dx * PLAYER_SPEED * dt;
+      localPlayer.y += dy * PLAYER_SPEED * dt;
 
-      // Keep player inside world
-      player.x = Math.max(
+      // Keep local player inside world
+      localPlayer.x = Math.max(
         PLAYER_SIZE / 2,
-        Math.min(WORLD_WIDTH - PLAYER_SIZE / 2, player.x)
+        Math.min(WORLD_WIDTH - PLAYER_SIZE / 2, localPlayer.x)
       );
-      player.y = Math.max(
+      localPlayer.y = Math.max(
         PLAYER_SIZE / 2,
-        Math.min(WORLD_HEIGHT - PLAYER_SIZE / 2, player.y)
+        Math.min(WORLD_HEIGHT - PLAYER_SIZE / 2, localPlayer.y)
       );
 
-      // Camera follows player
+      // Update remote players
+      for (const uuid in players) {
+        const p = players[uuid];
+        p.x += p.dx * PLAYER_SPEED * dt;
+        p.y += p.dy * PLAYER_SPEED * dt;
+
+        p.x = Math.max(PLAYER_SIZE / 2, Math.min(WORLD_WIDTH - PLAYER_SIZE / 2, p.x));
+        p.y = Math.max(PLAYER_SIZE / 2, Math.min(WORLD_HEIGHT - PLAYER_SIZE / 2, p.y));
+
+        if (now - p.lastUpdate > 2000) {
+          p.dx = 0;
+          p.dy = 0;
+        }
+      }
+
+      // Camera follows local player
       const cameraX = Math.max(
         0,
-        Math.min(WORLD_WIDTH - width, player.x - width / 2)
+        Math.min(WORLD_WIDTH - width, localPlayer.x - width / 2)
       );
 
       const cameraY = Math.max(
         0,
-        Math.min(WORLD_HEIGHT - height, player.y - height / 2)
+        Math.min(WORLD_HEIGHT - height, localPlayer.y - height / 2)
       );
 
       // Background
@@ -129,29 +166,28 @@ export default function Game() {
         WORLD_HEIGHT
       );
 
-      // // Player
-      // ctx.fillStyle = "#4ade80";
-      // ctx.fillRect(
-      //   player.x - PLAYER_SIZE / 2 - cameraX,
-      //   player.y - PLAYER_SIZE / 2 - cameraY,
-      //   PLAYER_SIZE,
-      //   PLAYER_SIZE
-      // );
+      // Draw local player
+      if (playerImage.complete) {
+        ctx.drawImage(
+          playerImage,
+          localPlayer.x - PLAYER_SIZE / 2 - cameraX,
+          localPlayer.y - PLAYER_SIZE / 2 - cameraY,
+          PLAYER_SIZE,
+          PLAYER_SIZE
+        );
 
-      // replace with sprite
-
-      const playerImage = new Image();
-      playerImage.src = "/assets/sprites/cat-removebg-preview.png";
-      playerImage.width = PLAYER_SIZE;
-      playerImage.height = PLAYER_SIZE;
-
-      ctx.drawImage(
-        playerImage,
-        player.x - PLAYER_SIZE / 2 - cameraX,
-        player.y - PLAYER_SIZE / 2 - cameraY,
-        PLAYER_SIZE,
-        PLAYER_SIZE
-      );
+        // Draw remote players
+        for (const uuid in players) {
+          const p = players[uuid];
+          ctx.drawImage(
+            playerImage,
+            p.x - PLAYER_SIZE / 2 - cameraX,
+            p.y - PLAYER_SIZE / 2 - cameraY,
+            PLAYER_SIZE,
+            PLAYER_SIZE
+          );
+        }
+      }
 
       requestAnimationFrame(loop);
     }
@@ -162,6 +198,7 @@ export default function Game() {
       window.removeEventListener("resize", resize);
       window.removeEventListener("keydown", keyDown);
       window.removeEventListener("keyup", keyUp);
+      channel.unsubscribe();
     };
   }, []);
 

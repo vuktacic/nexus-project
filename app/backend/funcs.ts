@@ -1,5 +1,4 @@
 import { supabase } from "./supabase";
-
 /*
 id
 positionX
@@ -28,17 +27,18 @@ export async function addPlayer(name:string){
         shark = true;
     }
 
-    positionY = 1000 * Math.random();
-    positionX = shark? 90 * Math.random() +10 : 90 * Math.random() + 900; 
-    const {data:d1,error:e1} = await supabase.from('game').insert({name,positionX,positionY,gold:0,shark,shield:false}).select().single();
+    positionY = Math.floor(1000 * Math.random());
+    positionX = Math.floor(shark? 90 * Math.random() +10 : 90 * Math.random() + 900); 
+    const {data:d1,error:e1} = await supabase.from('game').insert({name,positionX,positionY,gold:0,shark,shield:false}).select();
     if (e1){
         return {error:e1.message,uuid:null};
     }
     return {error:null,uuid:d1.uuid};
 }
 export async function getGold(shark:boolean){
-    const {data,error} = await supabase.from('game').select('*');
-    if (error) console.error(error.message);
+    const {data,error} = await supabase.from('game').select("*");
+    if (error) {console.error(error.message);
+    console.error(error);}
     let gold =0;
     data?.forEach((value)=>{
         if (value.shark == shark){
