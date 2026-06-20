@@ -72,3 +72,10 @@ export async function getGold(shark: boolean) {
 
   return gold;
 }
+export async function getSingleGold(uuid:string){
+    const {data,error} = await supabase.from('game').select('gold').eq("uuid",uuid).single();
+    if (error){
+        console.error(error.message);
+    }
+    return data?.gold;
+}
