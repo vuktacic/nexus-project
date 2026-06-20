@@ -3,11 +3,11 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "../backend/supabase";
 
-const WORLD_WIDTH = 3000;
-const WORLD_HEIGHT = 3000;
+export const WORLD_WIDTH = 3000;
+export const WORLD_HEIGHT = 3000;
 
-const PLAYER_SIZE = 100;
-const PLAYER_SPEED = 1000; // pixels/sec
+export const PLAYER_SIZE = 100;
+export const PLAYER_SPEED = 1000; // pixels/sec
 
 export default function Game({ playerName }: { playerName: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -358,10 +358,13 @@ export default function Game({ playerName }: { playerName: string }) {
     <canvas
       ref={canvasRef}
       style={{
-        display: "block",
         width: "100vw",
         height: "100vh",
+        display: "block",
+        userSelect: "none",
+        WebkitUserSelect: "none",
         touchAction: "none",
+        WebkitTouchCallout: "none",
       }}
     />
   );
