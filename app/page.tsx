@@ -43,9 +43,8 @@ export default function HomePage() {
       </div>
     );
   }
-  return <Game playerName={name} orientation={orientation} motion={motion} />;
   const router = useRouter();
-
+  
   useEffect(() => {
     const uuid = localStorage.getItem("player_uuid");
 
@@ -55,6 +54,6 @@ export default function HomePage() {
       router.replace("/game");
     }
   }, [router]);
-
-  return null;
+  
+  return <Game playerName={name} orientation={orientation} motion={motion} />;
 }

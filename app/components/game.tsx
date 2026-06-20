@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-
+import { supabase } from "../backend/supabase";
 const WORLD_WIDTH = 3000;
 const WORLD_HEIGHT = 3000;
 
 export const PLAYER_SIZE = 100;
-export const PLAYER_SPEED = 1000; // pixels/sec
+export const PLAYER_SPEED = 1000; 
 
-const ATTACK_DURATION = 0.15; // seconds
-const COOLDOWN_TIME = 0.5; // seconds
+const ATTACK_DURATION = 0.15;
+const COOLDOWN_TIME = 0.5; 
 
-// Thresholds for the shake-to-swap-sprite gesture
-const GAMMA_DELTA_THRESHOLD = 5;
-const ACCEL_Y_DELTA_THRESHOLD = 6;
+const GAMMA_THRESHOLD = 5;
+const Y_THRESHOLD = 6;
+
+const BROADCAST_INTERVAL_MS = 100;
 
 type Orientation = { alpha: number; beta: number; gamma: number };
 type Motion = { x: number; y: number; z: number };
@@ -29,8 +30,6 @@ export default function Game({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // keep latest orientation/motion available inside the imperative loop,
-  // since the loop closure is created once with an empty effect dep array
   const debugRef = useRef({ orientation, motion });
   useEffect(() => {
     debugRef.current = { orientation, motion };
@@ -43,7 +42,6 @@ export default function Game({
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
 
-    // Preload sprites once instead of constructing a new Image every frame
     const catImage = new Image();
     catImage.src = "/assets/sprites/cat-removebg-preview.png";
 
@@ -80,6 +78,11 @@ export default function Game({
       y: WORLD_HEIGHT / 2,
     };
 
+    const selfId =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+
     const players: Record<string, { x: number, y: number, dx: number, dy: number, lastUpdate: number }> = {};
 
     const channel = supabase.channel('game_room')
@@ -88,6 +91,8 @@ export default function Game({
         { event: 'joystick' },
         (payload) => {
           const { uuid, dx, dy } = payload.payload;
+          if (uuid === selfId) return;
+
           if (!players[uuid]) {
             players[uuid] = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, dx: 0, dy: 0, lastUpdate: performance.now() };
           }
@@ -173,20 +178,19 @@ export default function Game({
     }
 
     let last = performance.now();
+    let lastBroadcast = 0;
     const maxTouchDistance = 90;
     const touchDeadzone = 8;
 
     let attackTime = 0;
     let cooldown = 0;
 
-    // Previous orientation/motion readings, used to detect the shake
-    // gesture that swaps the player's sprite.
     let prevGamma: number | null = null;
     let prevMotionX: number | null = null;
     let prevMotionY: number | null = null;
     let prevMotionZ: number | null = null;
 
-    function updateShakeToSwapSprite() {
+    function gyroAndAccelHandler() {
       const currentOrientation = debugRef.current.orientation;
       const currentMotion = debugRef.current.motion;
 
@@ -200,9 +204,7 @@ export default function Game({
         const accelYDelta = Math.abs(y - prevMotionY);
 
         if (
-          gammaDelta > GAMMA_DELTA_THRESHOLD &&
-          accelYDelta > ACCEL_Y_DELTA_THRESHOLD
-        ) {
+          gammaDelta > GAMMA_THRESHOLD && accelYDelta > Y_THRESHOLD) {
           shark = !shark;
         }
       }
@@ -247,7 +249,6 @@ export default function Game({
         }
       }
 
-      // Normalize diagonal movement
       if (dx !== 0 || dy !== 0) {
         const len = Math.hypot(dx, dy);
         dx /= len;
@@ -266,6 +267,16 @@ export default function Game({
         PLAYER_SIZE / 2,
         Math.min(WORLD_HEIGHT - PLAYER_SIZE / 2, localPlayer.y)
       );
+
+      // Tell other clients where we're headed (throttled)
+      if (now - lastBroadcast > BROADCAST_INTERVAL_MS) {
+        lastBroadcast = now;
+        channel.send({
+          type: "broadcast",
+          event: "joystick",
+          payload: { uuid: selfId, dx, dy },
+        });
+      }
 
       // Update remote players
       for (const uuid in players) {
@@ -325,33 +336,47 @@ export default function Game({
       ctx.lineWidth = 4;
       ctx.strokeRect(-cameraX, -cameraY, WORLD_WIDTH, WORLD_HEIGHT);
 
+      // Remote players (drawn before the local player/UI so the
+      // local player's name/health bar stay on top)
+      for (const uuid in players) {
+        const p = players[uuid];
+        ctx.drawImage(
+          catImage,
+          p.x - PLAYER_SIZE / 2 - cameraX,
+          p.y - PLAYER_SIZE / 2 - cameraY,
+          PLAYER_SIZE,
+          PLAYER_SIZE
+        );
+      }
+
       // Player name
       ctx.fillStyle = "#ffffff";
       ctx.font = "16px Arial";
       ctx.textAlign = "center";
       ctx.fillText(
         playerName,
-        player.x - cameraX,
-        player.y - PLAYER_SIZE / 2 - cameraY - 10
+        localPlayer.x - cameraX,
+        localPlayer.y - PLAYER_SIZE / 2 - cameraY - 10
       );
 
       // Health bar
       ctx.fillStyle = "#ff0000";
       ctx.fillRect(
-        player.x - cameraX - 50,
-        player.y + PLAYER_SIZE / 2 - cameraY + 10,
+        localPlayer.x - cameraX - 50,
+        localPlayer.y + PLAYER_SIZE / 2 - cameraY + 10,
         health,
         10
       );
 
-      // Player sprite (swapped via shake gesture)
-      updateShakeToSwapSprite();
+
+      gyroAndAccelHandler();
+
       const currentSprite = shark ? catImage : sharkImage;
 
       ctx.drawImage(
         currentSprite,
-        player.x - PLAYER_SIZE / 2 - cameraX,
-        player.y - PLAYER_SIZE / 2 - cameraY,
+        localPlayer.x - PLAYER_SIZE / 2 - cameraX,
+        localPlayer.y - PLAYER_SIZE / 2 - cameraY,
         PLAYER_SIZE,
         PLAYER_SIZE
       );
@@ -360,8 +385,8 @@ export default function Game({
       if (keys[" "]) {
         ctx.fillStyle = "rgba(0, 255, 255, 0.5)";
         ctx.fillRect(
-          player.x - cameraX - PLAYER_SIZE / 2 - 10,
-          player.y - cameraY - PLAYER_SIZE / 2 - 10,
+          localPlayer.x - cameraX - PLAYER_SIZE / 2 - 10,
+          localPlayer.y - cameraY - PLAYER_SIZE / 2 - 10,
           PLAYER_SIZE + 20,
           PLAYER_SIZE + 20
         );
@@ -369,8 +394,8 @@ export default function Game({
 
       // Attack swing
       if (attackTime > 0) {
-        const screenPlayerX = player.x - cameraX;
-        const screenPlayerY = player.y - cameraY;
+        const screenPlayerX = localPlayer.x - cameraX;
+        const screenPlayerY = localPlayer.y - cameraY;
 
         const attackDx = pointer.x - screenPlayerX;
         const attackDy = pointer.y - screenPlayerY;
@@ -408,6 +433,7 @@ export default function Game({
       canvas.removeEventListener("pointercancel", endTouchInput);
       window.removeEventListener("pointerdown", attackPointerDown);
       canvas.removeEventListener("pointermove", updatePointerPosition);
+      supabase.removeChannel(channel);
     };
   }, []);
 
@@ -422,8 +448,6 @@ export default function Game({
         userSelect: "none",
         WebkitUserSelect: "none",
         touchAction: "none",
-        WebkitUserSelect: "none",
-        userSelect: "none",
         WebkitTouchCallout: "none",
         WebkitTapHighlightColor: "transparent",
       }}
