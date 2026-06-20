@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { PLAYER_SIZE } from "./components/game";
 
 export default function Overview() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,22 +35,26 @@ export default function Overview() {
         }
 
         // grab all players (placeholder) and draw them. sprite shark/cat based on shark boolean. also draw health bar and name above them
-            const players: any[] = []
+        const players: any[] = []
 
-            players.forEach(player => {
-                const screenX = player.x;
-                const screenY = player.y;
+        players.forEach(player => {
+            const screenX = player.x;
+            const screenY = player.y;
 
-                // draw player sprite (placeholder)
-                ctx.fillStyle = player.shark ? "blue" : "orange";
-                ctx.beginPath();
-                ctx.arc(screenX, screenY, 20, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // draw health bar
-                ctx.fillStyle = "red";
-                ctx.fillRect(screenX - 25, screenY - 40, 50 * (player.health / 100), 5);
-            });
+            // draw player sprite image
+
+            const playerImage = new Image();
+            // playerImage.src = "/assets/sprites/cat-removebg-preview.png";
+            // depends based on shark boolean
+            playerImage.src = player.shark ? "/assets/sprites/cat-removebg-preview.png"
+                : "/assets/sprites/shark-removebg-preview.png";
+            playerImage.width = PLAYER_SIZE;
+            playerImage.height = PLAYER_SIZE;
+
+            // draw health bar
+            ctx.fillStyle = "red";
+            ctx.fillRect(screenX - 25, screenY - 40, 50 * (player.health / 100), 5);
+        });
 
         return () => {
             window.removeEventListener("resize", resize);
