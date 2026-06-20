@@ -1,14 +1,14 @@
 "use client";
-
 import { useState } from "react";
 import dynamic from "next/dynamic";
-
+import { useDeviceMotion } from "./hooks/useDeviceMotion";
 
 const Game = dynamic(() => import("./components/game"), { ssr: false });
 
 export default function HomePage() {
   const [name, setName] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const { orientation, motion, permissionNeeded, requestPermission } = useDeviceMotion();
 
   if (!submitted) {
     return (
@@ -21,9 +21,13 @@ export default function HomePage() {
         }}
       >
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            if (name.trim()) setSubmitted(true);
+            if (!name.trim()) return;
+            if (permissionNeeded) {
+              await requestPermission();
+            }
+            setSubmitted(true);
           }}
         >
           <input
@@ -36,6 +40,5 @@ export default function HomePage() {
       </div>
     );
   }
-
-  return <Game playerName={name} />;
+  return <Game playerName={name} orientation={orientation} motion={motion} />;
 }
