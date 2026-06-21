@@ -180,7 +180,7 @@ export default function Host() {
 
                 ctx.translate(x, y);
 
-                ctx.rotate(fx.angle);
+                ctx.rotate(fx.angle + Math.PI / 2); 
 
                 ctx.drawImage(
                     fireballImg,
