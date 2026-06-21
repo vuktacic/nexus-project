@@ -23,7 +23,7 @@ export default function Host() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const playersRef = useRef<any[]>([]);
     const fxRef = useRef<any[]>([]);
-    const teamRef = useRef({ shark: 100, cat: 100 });
+    const teamRef = useRef({ shark: 1000, cat: 1000 });
     const winnerRef = useRef<string | null>(null);
     const winnerStartRef = useRef<number | null>(null);
     const confettiRef = useRef<any[]>([]);
