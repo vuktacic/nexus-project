@@ -438,10 +438,10 @@ export default function Controller() {
                     width: "100vw",
                     height: "100vh",
                     overflow: "hidden",
-                    background: isMobile ? undefined : "#000",
+                    background: "#000",
                     backgroundImage: isMobile ? `url(${backgroundImage.src})` : "none",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
+                    backgroundSize: isMobile ? "contain" : "auto",
+                    backgroundPosition: "center center",
                     backgroundRepeat: "no-repeat",
                     fontFamily: "system-ui, -apple-system, sans-serif",
                 }}
