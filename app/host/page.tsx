@@ -64,8 +64,9 @@ export default function Host() {
                         fxRef.current.push({ ...fx, t: 0 });
                     });
                     channel.on("game_over", (data: any) => {
-                        gameOverRef.current = { winner: data.winner };
-                    });
+    gameOverRef.current = { winner: data.winner };
+    winnerRef.current = data.winner;  // ← this is what actually triggers drawWinnerScreen
+});
                 });
             })
             .catch((err) => {
@@ -584,38 +585,7 @@ export default function Host() {
             if (winnerRef.current) {
                 drawWinnerScreen(now);
             }
-            if (gameOverRef.current) {
-                const { winner } = gameOverRef.current;
-                const isShark = winner === "shark";
-
-                // Dim overlay
-                ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // Trophy emoji
-                ctx.font = "bold 96px system-ui, sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillStyle = "#ffd700";
-                ctx.fillText("🏆", canvas.width / 2, canvas.height / 2 - 100);
-
-                // Winner banner
-                ctx.font = "bold 72px system-ui, sans-serif";
-                ctx.fillStyle = isShark ? "#4fc3f7" : "#f48fb1";
-                ctx.fillText(
-                    `${isShark ? "🦈 Shark" : "🐱 Cat"} Team Wins!`,
-                    canvas.width / 2,
-                    canvas.height / 2
-                );
-
-                // Subtitle
-                ctx.font = "bold 32px system-ui, sans-serif";
-                ctx.fillStyle = "#ffffff";
-                ctx.fillText(
-                    `The opposing team was bankrupted!`,
-                    canvas.width / 2,
-                    canvas.height / 2 + 70
-                );
-            }
+            
             requestAnimationFrame(loop);
         }
 
