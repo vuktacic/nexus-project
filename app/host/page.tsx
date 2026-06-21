@@ -393,7 +393,6 @@ export default function Host() {
                     ctx.lineJoin = "round";
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = "#7a0000";
-                    // ctx.fillStyle = "#ff5252";
                     ctx.fillStyle = "#ff5252";
                     ctx.beginPath();
                     ctx.moveTo(SPRITE_SIZE / 2 + 12, 0);
