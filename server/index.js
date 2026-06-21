@@ -107,7 +107,6 @@ io.onConnection((channel) => {
     }
   });
 
-  // Attack — payload is always an object (even if empty {}) so data is never null
   channel.on("attack", (data) => {
     const p = WORLD.players.get(channel.id);
     if (!p || !p.alive) return;

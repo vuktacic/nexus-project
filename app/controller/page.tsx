@@ -16,7 +16,7 @@ const SHIELD_DURATION = 500;
 const SHIELD_COOLDOWN = 800;
 
 const ATTACK_THRESHOLD = 7;
-const ATTACK_COOLDOWN_TIME = 700;
+const ATTACK_COOLDOWN_TIME = 1000;
 const GYRO_POLL_MS = 50;
 
 const MOTION_DETECTION_TIMEOUT_MS = 1500;
@@ -420,15 +420,15 @@ export default function Controller() {
                     }}
                 >
                     <h2 style={{ marginBottom: "8px", fontSize: "24px", fontWeight: 700, letterSpacing: "-0.5px" }}>
-                        Enter Arena
+                        join the fun
                     </h2>
                     <p style={{ color: "#8a8a9e", fontSize: "14px", marginBottom: "24px" }}>
-                        Choose your name to join the host lobby.
+                        pick your name!!
                     </p>
 
                     <input
                         type="text"
-                        placeholder="Player Name"
+                        placeholder="name of kitty or sharky"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         maxLength={15}
@@ -490,7 +490,6 @@ export default function Controller() {
                 fontFamily: "system-ui, sans-serif",
             }}
         >
-            {/* The image instructions now handle clicks directly as fallback controls */}
             <InteractiveInstructionButtons
                 channelRef={channelRef}
                 shieldActive={shieldActive}
