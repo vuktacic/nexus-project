@@ -633,7 +633,7 @@ export default function Controller() {
 
         console.log(`[CLIENT LOG] Connecting to ${backendUrl}`);
 
-        setStatusMsg(`Connecting to ${backendUrl}...`);
+        setStatusMsg(`Connecting to game server...`);
 
 
 
