@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef , useState} from "react";
 import SHIELD_DURATION from "../controller/page"
 
 const WORLD_SCALE = 0.1;
@@ -18,11 +18,12 @@ const TEAM_THEME = {
 const GOLD = { fill: "#ffd54a", stroke: "#9a6b00" };
 
 export default function Host() {
+    const [endScreen,setEndScreen] = useState(false);
     const gameOverRef = useRef<{ winner: string } | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const playersRef = useRef<any[]>([]);
     const fxRef = useRef<any[]>([]);
-    const teamRef = useRef({ shark: 0, cat: 0 });
+    const teamRef = useRef({ shark: 100, cat: 100 });
     const winnerRef = useRef<string | null>(null);
     const winnerStartRef = useRef<number | null>(null);
     const confettiRef = useRef<any[]>([]);
@@ -560,6 +561,55 @@ export default function Host() {
             drawComicText("YAYYY VICTORY gg!", cx, cy + glowR + 70, 26, GOLD.fill, "#5a3d00", "center", 5);
         }
 
+
+
+
+        function drawEndScreen(shark:boolean) {
+
+            const theme = shark ? TEAM_THEME.shark : TEAM_THEME.cat;
+            const mvpImg = shark? mvpSharkImg : mvpCatImg;
+
+            ctx.save();
+            ctx.fillStyle = "rgba(10, 8, 20, 0.6)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            updateConfetti(1 / 60);
+            drawConfetti();
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2 + 10;
+            const glowR = Math.min(canvas.width, canvas.height) * 0.32;
+            const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+            glow.addColorStop(0, theme.glow);
+            glow.addColorStop(1, "rgba(255,255,255,0)");
+            ctx.save();
+            ctx.globalAlpha = 0.85;
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            for (let i = 0; i < 6; i++) {
+                const a = 1200 / 1200 + (i * Math.PI) / 3;
+                const r = glowR * 0.78;
+                drawStar(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 12, 5, 5, a, "#ffffff", 0.85);
+            }
+
+            const spriteSize = Math.min(canvas.width, canvas.height) * 0.34 * 1;
+            ctx.save();
+            ctx.translate(cx, cy + 1);
+            ctx.drawImage(mvpImg, -spriteSize / 2, -spriteSize / 2, spriteSize, spriteSize);
+            ctx.restore();
+
+            const bannerY = cy - glowR - 30;
+            drawComicText(`${theme.emoji} ${theme.label} WIN! ${theme.emoji}`, cx, bannerY, 52, "#ffffff", theme.dark, "center", 9);
+
+            drawComicText("YAYYY VICTORY gg!", cx, cy + glowR + 70, 26, GOLD.fill, "#5a3d00", "center", 5);
+        }
+
+
         function loop(now: number) {
             const dt = (now - last) / 1000;
             last = now;
@@ -581,7 +631,14 @@ export default function Host() {
             drawAttackFX();
             drawPlayers();
             drawHUD();
-
+            if (teamRef.current.cat == 0){
+                setEndScreen(true);
+                drawEndScreen(true);
+            }
+            if (teamRef.current.shark == 0){
+                setEndScreen(true);
+                drawEndScreen(false);
+            }
             if (winnerRef.current) {
                 drawWinnerScreen(now);
             }
@@ -593,7 +650,7 @@ export default function Host() {
 
         return () => window.removeEventListener("resize", resize);
     }, []);
-
+    
     return (
         <div
             style={{
