@@ -10,27 +10,30 @@ export default function Host() {
     useEffect(() => {
         let channel: any = null;
 
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://165.22.144.193";
+        console.log(`[HOST LOG] Attempting connection. Target URL: ${backendUrl}, Port: 3001`);
+
         import("@geckos.io/client")
             .then((module) => {
                 const geckos = module.default;
-                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://165.22.144.193";
                 channel = geckos({ url: backendUrl, port: 3001 });
 
                 channel.onConnect((error: any) => {
                     if (error) {
-                        console.error(error.message);
+                        console.error("[HOST LOG] Connection error object:", error);
                         return;
                     }
-                    console.log("Host connected to server");
+                    console.log(`[HOST LOG] Connected to server successfully! Channel ID: ${channel.id}`);
 
                     channel.on("state", (state: any) => {
+                        console.log(`[HOST LOG] Received state: ${state.players?.length || 0} players active.`);
                         playersRef.current = state.players || [];
                         attacksRef.current = state.attacks || [];
                     });
                 });
             })
             .catch((err) => {
-                console.error("Failed to load geckos client", err);
+                console.error("[HOST LOG] Failed to dynamically load geckos client library:", err);
             });
 
         return () => {
