@@ -10,12 +10,12 @@ function clampJoystick(dx: number, dy: number, max: number) {
     return { dx: dx * scale, dy: dy * scale };
 }
 
-// phone controls
-const SHIELD_BETA_THRESHOLD = 60;
+// phone control defaults
+const DEFAULT_SHIELD_BETA_THRESHOLD = 60;
 export const SHIELD_DURATION = 500;
 const SHIELD_COOLDOWN = 800;
 
-const ATTACK_THRESHOLD = 7;
+const DEFAULT_ATTACK_THRESHOLD = 7;
 const ATTACK_COOLDOWN_TIME = 1000;
 const GYRO_POLL_MS = 50;
 
@@ -134,6 +134,10 @@ export default function Controller() {
 
     const [motionAvailable, setMotionAvailable] = useState<boolean | null>(null);
 
+    const [showSettings, setShowSettings] = useState(false);
+    const [attackThres, setAttackThres] = useState(DEFAULT_ATTACK_THRESHOLD);
+    const [betaThres, setBetaThres] = useState(DEFAULT_SHIELD_BETA_THRESHOLD);
+
     const [knob, setKnob] = useState({ x: 0, y: 0 });
     const joystickRef = useRef({
         active: false,
@@ -176,6 +180,11 @@ export default function Controller() {
     useEffect(() => {
         debugRef.current = { orientation, motion };
     }, [orientation, motion]);
+
+    const thresholdsRef = useRef({ attackThres, betaThres });
+    useEffect(() => {
+        thresholdsRef.current = { attackThres, betaThres };
+    }, [attackThres, betaThres]);
 
     const prevRef = useRef({
         alpha: null as number | null,
@@ -257,6 +266,7 @@ export default function Controller() {
         if (!currentOrientation || !currentMotion) return;
 
         const prev = prevRef.current;
+        const currentThresholds = thresholdsRef.current;
 
         if (
             prev.alpha !== null &&
@@ -271,9 +281,9 @@ export default function Controller() {
             const motionDeltaZ = currentMotion.z - prev.motionZ;
             const accelZDelta = Math.abs(motionDeltaZ);
 
-            if (betaDelta <= 8 && accelZDelta > ATTACK_THRESHOLD) {
+            if (betaDelta <= 8 && accelZDelta > currentThresholds.attackThres) {
                 triggerAttack();
-            } else if (gammaDelta >= SHIELD_BETA_THRESHOLD) {
+            } else if (gammaDelta >= currentThresholds.betaThres) {
                 triggerShield();
             }
         }
@@ -357,7 +367,7 @@ export default function Controller() {
     }
 
     function onPointerDown(e: React.PointerEvent) {
-        if ((e.target as HTMLElement).closest("button")) return;
+        if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest(".settings-panel")) return;
         joystickRef.current.active = true;
         joystickRef.current.pointerId = e.pointerId;
         joystickRef.current.originX = e.clientX;
@@ -488,6 +498,91 @@ export default function Controller() {
                 fontFamily: "system-ui, sans-serif",
             }}
         >
+            {/* Settings Toggle Button */}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSettings(!showSettings);
+                }}
+                style={{
+                    position: "absolute",
+                    top: "20px",
+                    right: "20px",
+                    zIndex: 30,
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderRadius: "50%",
+                    width: "44px",
+                    height: "44px",
+                    cursor: "pointer",
+                    color: "white",
+                    fontSize: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    outline: "none",
+                }}
+            >
+                ⚙️
+            </button>
+
+            {/* Slider Settings Overlay Panel */}
+            {showSettings && (
+                <div
+                    className="settings-panel"
+                    style={{
+                        position: "absolute",
+                        top: "76px",
+                        right: "20px",
+                        zIndex: 25,
+                        width: "260px",
+                        background: "rgba(0, 0, 0, 0.85)",
+                        backdropFilter: "blur(10px)",
+                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                        borderRadius: "12px",
+                        padding: "16px",
+                        color: "white",
+                        boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                    }}
+                >
+                    <h3 style={{ margin: "0 0 16px 0", fontSize: "16px", fontWeight: 600 }}>Sensors Adjustment</h3>
+                    
+                    {/* Attack Slider */}
+                    <div style={{ marginBottom: "16px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px", color: "#ccc" }}>
+                            <span>Attack Threshold</span>
+                            <span style={{ color: "#6366f1", fontWeight: "bold" }}>{attackThres}</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            step="0.5"
+                            value={attackThres}
+                            onChange={(e) => setAttackThres(parseFloat(e.target.value))}
+                            style={{ width: "100%", accentColor: "#6366f1", cursor: "pointer" }}
+                        />
+                    </div>
+
+                    {/* Beta/Shield Slider */}
+                    <div style={{ marginBottom: "4px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px", color: "#ccc" }}>
+                            <span>Beta Threshold</span>
+                            <span style={{ color: "#00bcd4", fontWeight: "bold" }}>{betaThres}°</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={betaThres}
+                            onChange={(e) => setBetaThres(parseInt(e.target.value))}
+                            style={{ width: "100%", accentColor: "#00bcd4", cursor: "pointer" }}
+                        />
+                    </div>
+                </div>
+            )}
+
             <InteractiveInstructionButtons
                 channelRef={channelRef}
                 shieldActive={shieldActive}
