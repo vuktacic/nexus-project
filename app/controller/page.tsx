@@ -12,11 +12,16 @@ function clampJoystick(dx: number, dy: number, max: number) {
 
 // phone controls
 const SHIELD_BETA_THRESHOLD = 60;
+<<<<<<< HEAD
 const SHIELD_DURATION = 1500;
 const SHIELD_COOLDOWN = 2000;
+=======
+export const SHIELD_DURATION = 500;
+const SHIELD_COOLDOWN = 800;
+>>>>>>> 519699fac87b70b9c51e3c2209a7c968a98d308c
 
 const ATTACK_THRESHOLD = 7;
-const ATTACK_COOLDOWN_TIME = 500;
+const ATTACK_COOLDOWN_TIME = 1000;
 const GYRO_POLL_MS = 50;
 
 const MOTION_DETECTION_TIMEOUT_MS = 1500;
@@ -67,7 +72,6 @@ function InteractiveInstructionButtons({
                 zIndex: 10,
             }}
         >
-            {/* ATTACK IMAGE BUTTON */}
             <button
                 onClick={handleAttack}
                 disabled={attackCooldown || shieldActive}
@@ -95,7 +99,6 @@ function InteractiveInstructionButtons({
                 />
             </button>
 
-            {/* SHIELD IMAGE BUTTON */}
             <button
                 onClick={handleShieldClick}
                 disabled={shieldActive}
@@ -109,7 +112,7 @@ function InteractiveInstructionButtons({
             >
                 <img
                     src="/assets/ui/shield_ins.png"
-                    alt="SLAM to shield"
+                    alt="turn to shield"
                     style={{
                         width: 90,
                         height: 90,
@@ -197,6 +200,8 @@ export default function Controller() {
         if (shieldTimeoutRef.current) return;
         if (shieldCooldownRef.current) return;
 
+        shieldCooldownRef.current = true; 
+
         channelRef.current.emit("shield", { shield: true });
         setShieldActive(true);
 
@@ -209,9 +214,12 @@ export default function Controller() {
         setTimeout(
             () => {
                 shieldCooldownRef.current = false;
+                if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                navigator.vibrate([50]);
+                }
             },
             SHIELD_DURATION + SHIELD_COOLDOWN,
-        )
+        );
     }
 
     function handleManualShieldToggle() {
@@ -235,8 +243,15 @@ export default function Controller() {
         channelRef.current.emit("attack");
         attackCooldownRef.current = true;
 
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+            navigator.vibrate([10, 20, 30, 40, 50]); //attack
+        }
+
         setTimeout(() => {
             attackCooldownRef.current = false;
+            if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                navigator.vibrate([80]);
+            }
         }, ATTACK_COOLDOWN_TIME);
     }
 
@@ -294,7 +309,6 @@ export default function Controller() {
 
     useEffect(() => {
         if (!joined) return;
-
         const interval = setInterval(() => {
             channelRef.current?.emit("input", sendRef.current);
         }, 50);
@@ -409,15 +423,15 @@ export default function Controller() {
                     }}
                 >
                     <h2 style={{ marginBottom: "8px", fontSize: "24px", fontWeight: 700, letterSpacing: "-0.5px" }}>
-                        Enter Arena
+                        join the fun
                     </h2>
                     <p style={{ color: "#8a8a9e", fontSize: "14px", marginBottom: "24px" }}>
-                        Choose your name to join the host lobby.
+                        pick your name!!
                     </p>
 
                     <input
                         type="text"
-                        placeholder="Player Name"
+                        placeholder="name of kitty or sharky"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         maxLength={15}
@@ -479,7 +493,6 @@ export default function Controller() {
                 fontFamily: "system-ui, sans-serif",
             }}
         >
-            {/* The image instructions now handle clicks directly as fallback controls */}
             <InteractiveInstructionButtons
                 channelRef={channelRef}
                 shieldActive={shieldActive}
