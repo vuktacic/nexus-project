@@ -11,8 +11,8 @@ const FX_MAX_TIME = 0.25;
 const FONT_DISPLAY = "'Baloo 2', 'Comic Sans MS', 'Arial Rounded MT Bold', system-ui, sans-serif";
 
 const TEAM_THEME = {
-    shark: { primary: "#1fb6ff", dark: "#0a5c8a", glow: "#bdf3ff", label: "SHARKS", emoji: "🦈" },
-    cat: { primary: "#ff7a59", dark: "#9c3b1f", glow: "#ffe1cf", label: "CATS", emoji: "🐱" },
+    shark: { primary: "#1fb6ff", dark: "#0a5c8a", glow: "#bdf3ff", label: "SHARKS"},
+    cat: { primary: "#ff7a59", dark: "#9c3b1f", glow: "#ffe1cf", label: "CATS"},
 };
 
 const GOLD = { fill: "#ffd54a", stroke: "#9a6b00" };
