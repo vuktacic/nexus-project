@@ -20,117 +20,103 @@ const GYRO_POLL_MS = 50;
 
 const MOTION_DETECTION_TIMEOUT_MS = 1500;
 
-function ActionButtons({
-    channelRef,
-    shieldActive,
-    onShield,
-}: {
+interface MotionButtonsProps {
     channelRef: React.MutableRefObject<any>;
     shieldActive: boolean;
     onShield: () => void;
-}) {
+}
+
+function InteractiveInstructionButtons({
+    channelRef,
+    shieldActive,
+    onShield,
+}: MotionButtonsProps) {
     const [attackCooldown, setAttackCooldown] = useState(false);
 
-    const handleAttack = () => {
-        if (attackCooldown || shieldActive || !channelRef.current) return; // can't attack w/ shield on
+    const handleAttack = (e: React.MouseEvent) => {
+        // Prevent event from bubbling up to the full-screen joystick listener
+        e.stopPropagation(); 
+        if (attackCooldown || shieldActive || !channelRef.current) return;
+        
         channelRef.current.emit("attack");
         setAttackCooldown(true);
         setTimeout(() => setAttackCooldown(false), ATTACK_COOLDOWN_TIME);
+    };
+
+    const handleShieldClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onShield();
     };
 
     return (
         <div
             style={{
                 position: "absolute",
-                bottom: 40,
+                bottom: 40, 
                 left: 0,
                 right: 0,
                 display: "flex",
                 justifyContent: "center",
-                gap: "16px",
+                gap: "32px",
                 zIndex: 10,
             }}
         >
+            {/* ATTACK IMAGE BUTTON */}
             <button
                 onClick={handleAttack}
                 disabled={attackCooldown || shieldActive}
                 style={{
-                    padding: "14px 28px",
-                    borderRadius: "10px",
+                    background: "none",
                     border: "none",
-                    background: attackCooldown || shieldActive ? "#333" : "#f44336",
-                    color: attackCooldown || shieldActive ? "#666" : "#fff",
-                    fontWeight: "bold",
+                    padding: 0,
                     cursor: attackCooldown || shieldActive ? "not-allowed" : "pointer",
-                    opacity: attackCooldown || shieldActive ? 0.6 : 1,
-                    fontSize: "15px",
-                    minWidth: "120px",
+                    outline: "none",
                 }}
             >
-                {attackCooldown ? "ATTACK [CD]" : "ATTACK"}
+                <img
+                    src="/assets/ui/stab_ins.png"
+                    alt="push phone toward right direction to attack"
+                    style={{
+                        width: 90,
+                        height: 90,
+                        borderRadius: "14px",
+                        objectFit: "contain",
+                        background: attackCooldown || shieldActive ? "rgba(255,0,0,0.05)" : "rgba(255,255,255,0.05)",
+                        border: attackCooldown || shieldActive ? "2px solid rgba(244, 67, 54, 0.4)" : "2px solid rgba(255,255,255,0.15)",
+                        opacity: attackCooldown || shieldActive ? 0.4 : 1,
+                        transition: "all 0.15s ease",
+                    }}
+                />
             </button>
 
+            {/* SHIELD IMAGE BUTTON */}
             <button
-                onClick={onShield}
+                onClick={handleShieldClick}
                 disabled={shieldActive}
                 style={{
-                    padding: "14px 28px",
-                    borderRadius: "10px",
+                    background: "none",
                     border: "none",
-                    background: shieldActive ? "#333" : "#00bcd4",
-                    color: shieldActive ? "#666" : "#fff",
-                    fontWeight: "bold",
+                    padding: 0,
                     cursor: shieldActive ? "not-allowed" : "pointer",
-                    opacity: shieldActive ? 0.6 : 1,
-                    fontSize: "15px",
-                    minWidth: "120px",
+                    outline: "none",
                 }}
             >
-                {shieldActive ? "SHIELD [ON]" : "SHIELD"}
+                <img
+                    src="/assets/ui/shield_ins.png"
+                    alt="SLAM to shield"
+                    style={{
+                        width: 90,
+                        height: 90,
+                        borderRadius: "14px",
+                        objectFit: "contain",
+                        background: shieldActive ? "rgba(0,188,212,0.15)" : "rgba(255,255,255,0.05)",
+                        border: shieldActive ? "2px solid #00bcd4" : "2px solid rgba(255,255,255,0.15)",
+                        opacity: shieldActive ? 0.6 : 1,
+                        boxShadow: shieldActive ? "0 0 15px rgba(0, 188, 212, 0.4)" : "none",
+                        transition: "all 0.15s ease",
+                    }}
+                />
             </button>
-        </div>
-    );
-}
-
-function MotionInstructionImages() {
-    return (
-        <div
-            style={{
-                position: "absolute",
-                bottom: 120, // Pushed up slightly so it doesn't collide with buttons
-                left: 0,
-                right: 0,
-                display: "flex",
-                justifyContent: "center",
-                gap: "16px",
-                zIndex: 9,
-                pointerEvents: "none",
-            }}
-        >
-            <img
-                src="/assets/ui/stab_ins.png"
-                alt="push phone toward right direction"
-                style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: "10px",
-                    objectFit: "contain",
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                }}
-            />
-            <img
-                src="/assets/ui/shield_ins.png"
-                alt="SLAM to shield"
-                style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: "10px",
-                    objectFit: "contain",
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                }}
-            />
         </div>
     );
 }
@@ -478,15 +464,12 @@ export default function Controller() {
                 fontFamily: "system-ui, sans-serif",
             }}
         >
-            {/* Action buttons are now explicitly persistent */}
-            <ActionButtons
+            {/* The image instructions now handle clicks directly as fallback controls */}
+            <InteractiveInstructionButtons
                 channelRef={channelRef}
                 shieldActive={shieldActive}
                 onShield={handleManualShieldToggle}
             />
-
-            {/* Instruction graphics render safely above the buttons if gyro triggers */}
-            {motionAvailable === true && <MotionInstructionImages />}
 
             <div
                 style={{
