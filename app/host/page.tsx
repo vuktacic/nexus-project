@@ -317,6 +317,16 @@ export default function Host() {
             badge(TEAM_THEME.cat, catImg, teamRef.current.cat, "right");
         }
 
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+
         function drawPlayers() {
             const SPRITE_SIZE = 90;
             const now = Date.now();
@@ -378,7 +388,8 @@ export default function Host() {
                     ctx.lineJoin = "round";
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = "#7a0000";
-                    ctx.fillStyle = "#ff5252";
+                    // ctx.fillStyle = "#ff5252";
+                    ctx.fillStyle = getRandomColor();
                     ctx.beginPath();
                     ctx.moveTo(SPRITE_SIZE / 2 + 12, 0);
                     ctx.lineTo(SPRITE_SIZE / 2 - 3, -8);
