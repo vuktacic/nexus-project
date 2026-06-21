@@ -12,6 +12,7 @@ export default function Host() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const playersRef = useRef<any[]>([]);
     const fxRef = useRef<any[]>([]);
+    const teamRef = useRef({ shark: 0, cat: 0 });
 
     // ── geckos.io connection ──────────────────────────────────────────────────
     useEffect(() => {
@@ -42,6 +43,10 @@ export default function Host() {
                             ...p,
                             gold: p.gold ?? 0,
                         }));
+
+                        // Update team gold counts
+                        teamRef.current.shark = state.teams?.shark?.gold || 0;
+                        teamRef.current.cat = state.teams?.cat?.gold || 0;
                     });
 
                     // Attack visual effects
@@ -167,13 +172,11 @@ export default function Host() {
             drawAttackFX();
             drawPlayers();
 
-            // gold scores in top left and top right
+            // gold scores in top left and top right from WORLD 
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 18px system-ui, sans-serif";
             ctx.textAlign = "left";
-            ctx.fillText(`Shark Gold: ${playersRef.current.reduce((sum, p) => sum + (p.shark ? p.gold : 0), 0)}`, 20, 30);
             ctx.textAlign = "right";
-            ctx.fillText(`Cat Gold: ${playersRef.current.reduce((sum, p) => sum + (p.shark ? 0 : p.gold), 0)}`, canvas.width - 20, 30);
 
             requestAnimationFrame(loop);
         }
