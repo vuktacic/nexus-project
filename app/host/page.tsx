@@ -167,6 +167,14 @@ export default function Host() {
             drawAttackFX();
             drawPlayers();
 
+            // gold scores in top left and top right
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 18px system-ui, sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(`Shark Gold: ${playersRef.current.reduce((sum, p) => sum + (p.shark ? p.gold : 0), 0)}`, 20, 30);
+            ctx.textAlign = "right";
+            ctx.fillText(`Cat Gold: ${playersRef.current.reduce((sum, p) => sum + (p.shark ? 0 : p.gold), 0)}`, canvas.width - 20, 30);
+
             requestAnimationFrame(loop);
         }
 
