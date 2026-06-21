@@ -41,15 +41,24 @@ const WORLD_H = 8000;
 
 const WORLD = {
   players: new Map(),
+
+  teams: {
+    shark: {
+      gold: 0,
+    },
+    cat: {
+      gold: 0,  
+    }
+  }
 };
 
 function createPlayer(id, name) {
-  let shark = 0,cat=0;
+  let shark = 0, cat = 0;
   for (const p of WORLD.players.values()) {
-    if (p.shark){
+    if (p.shark) {
       shark++;
     }
-    else{
+    else {
       cat++;
     }
   }
@@ -155,6 +164,14 @@ setInterval(() => {
       p.gold += 1;
     } else if (p.shark && p.x > 11250) {
       p.gold += 1;
+    }
+
+    if (!p.shark && p.x > 11250) {
+      WORLD.teams.cat.gold += p.gold;
+      p.gold = 0;
+    } else if (p.shark && p.x < 2500) {
+      WORLD.teams.shark.gold += p.gold;
+      p.gold = 0;
     }
   }
 
