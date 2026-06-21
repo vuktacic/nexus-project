@@ -13,7 +13,7 @@ function clampJoystick(dx: number, dy: number, max: number) {
 // phone controls
 const SHIELD_BETA_THRESHOLD = 60;
 const SHIELD_DURATION = 1500;
-const SHIELD_COOLDOWN = 800;
+const SHIELD_COOLDOWN = 2000;
 
 const ATTACK_THRESHOLD = 7;
 const ATTACK_COOLDOWN_TIME = 500;
