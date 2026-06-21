@@ -22,7 +22,7 @@ export default function Controller() {
         import("@geckos.io/client")
             .then((module) => {
                 const geckos = module.default;
-                const channel = geckos({ url: backendUrl, port: isHttps ? undefined : 3001 });
+                const channel = geckos({ url: backendUrl, port: (isHttps ? null : 3001) as number });
 
                 channel.onConnect((error) => {
                     if (error) {
