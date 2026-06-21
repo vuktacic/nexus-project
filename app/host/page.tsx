@@ -335,12 +335,10 @@ export default function Host() {
                     continue;
                 }
 
-                // gentle cartoony idle bob, unique phase per player so the crowd doesn't move in lockstep
                 const phase = hashString(p.id || p.name || "p") % 1000;
                 const bob = Math.sin(now / 260 + phase) * 4;
                 const py = baseY + bob;
 
-                // soft ground shadow for a grounded, squash-and-stretch feel
                 ctx.save();
                 ctx.globalAlpha = 0.25;
                 ctx.fillStyle = "#000";
@@ -362,22 +360,7 @@ export default function Host() {
 
                 if (p.shield) {
                     ctx.save();
-
-                    const timeRemainingProgress = SHIELD_DURATION;
-                    let alpha = 1;
-
-                    if (timeRemainingProgress > 0.6) {
-                        const fadeProgress = (timeRemainingProgress - 0.6) / 0.4;
-                        alpha = 1 - fadeProgress;
-
-                        const blinkFrequency = 25;
-                        if (Math.sin(Date.now() / blinkFrequency) < 0) {
-                            alpha *= 0.2;
-                        }
-                    }
-
-                    ctx.globalAlpha = alpha;
-                    ctx.drawImage(shieldImg, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+                    ctx.drawImage(shieldImg, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE * 1.2, SPRITE_SIZE * 1.2);
 
                     ctx.restore();
                 }
