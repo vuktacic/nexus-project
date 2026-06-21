@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { SHIELD_DURATION } from "../controller/page";
 
 const WORLD_SCALE = 0.1;
 const ATTACK_RANGE_WORLD = 4000;
-const ATTACK_RANGE_SCREEN = ATTACK_RANGE_WORLD * WORLD_SCALE;
-const ATTACK_ANGLE = Math.PI / 6;
 const FX_MAX_TIME = 0.25;
 
 export default function Host() {
@@ -13,6 +12,7 @@ export default function Host() {
     const playersRef = useRef<any[]>([]);
     const fxRef = useRef<any[]>([]);
     const teamRef = useRef({ shark: 0, cat: 0 });
+    const winnerRef = useRef<string | null>(null);
 
     useEffect(() => {
         let channel: any = null;
@@ -36,19 +36,17 @@ export default function Host() {
                     }
                     console.log(`[HOST LOG] Connected! ID: ${channel.id}`);
 
-                    // Full world state (players)
                     channel.on("state", (state: any) => {
                         playersRef.current = (state.players || []).map((p: any) => ({
                             ...p,
                             gold: p.gold ?? 0,
                         }));
 
-                        // Update team gold counts
                         teamRef.current.shark = state.teams?.shark?.gold || 0;
                         teamRef.current.cat = state.teams?.cat?.gold || 0;
+                        winnerRef.current = state.winner || null;
                     });
 
-                    // Attack visual effects
                     channel.on("attack_fx", (fx: any) => {
                         fxRef.current.push({ ...fx, t: 0 });
                     });
@@ -120,67 +118,86 @@ export default function Host() {
         }
 
         function drawPlayers() {
-            const SPRITE_SIZE = 90;
+    const SPRITE_SIZE = 90;
 
-            const { catLeader, sharkLeader } = getTeamGoldLeaders();
+    const { catLeader, sharkLeader } = getTeamGoldLeaders();
 
-            for (const p of playersRef.current) {
-                let img = p.shark ? sharkImg : catImg;
-                const px = p.x * WORLD_SCALE;
-                const py = p.y * WORLD_SCALE;
+    for (const p of playersRef.current) {
+        let img = p.shark ? sharkImg : catImg;
+        const px = p.x * WORLD_SCALE;
+        const py = p.y * WORLD_SCALE;
+        
+        if (!p.alive) {
+            img = fireIMG;
+            ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+        } else {
+            console.log(`[HOST LOG] Drawing player ${p.name} at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) with gold: ${p.gold}`);
+
+            const isGoldLeader = p.gold > 0 && (p.shark ? p === sharkLeader : p === catLeader);
+            if (isGoldLeader) {
+                img = p.shark ? mvpSharkImg : mvpCatImg;
+            }
+
+            ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+
+            if (p.shield) {
+                ctx.save();
+
+                const timeRemainingProgress = SHIELD_DURATION;
                 
-                if (!p.alive) {
-                    img = fireIMG;
-                    ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
-                } else {
-                    console.log(`[HOST LOG] Drawing player ${p.name} at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) with gold: ${p.gold}`);
+                let alpha = 1;
+                
+                if (timeRemainingProgress > 0.6) {
+                    const fadeProgress = (timeRemainingProgress - 0.6) / 0.4;
+                    alpha = 1 - fadeProgress;
 
-                    const isGoldLeader = p.gold > 0 && (p.shark ? p === sharkLeader : p === catLeader);
-                    if (isGoldLeader) {
-                        img = p.shark ? mvpSharkImg : mvpCatImg;
-                    }
-
-                    if (p.shield) {
-                        img = shieldImg;
-                    }
-
-                    ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
-
-                    const dx = p.dx ?? 0;
-                    const dy = p.dy ?? 0;
-
-                    if (dx !== 0 || dy !== 0) {
-                        const angle = Math.atan2(dy, dx); // arctan of dy and dx
-
-                        ctx.save();
-                        ctx.translate(px, py); 
-                        ctx.rotate(angle);     
-
-                        ctx.fillStyle = "#ff3333";
-                        ctx.beginPath();
-                        ctx.moveTo(SPRITE_SIZE / 2 + 10, 0);
-                        ctx.lineTo(SPRITE_SIZE / 2 - 2, -7);
-                        ctx.lineTo(SPRITE_SIZE / 2 - 2, 7);
-                        ctx.closePath();
-                        ctx.fill();
-
-                        ctx.restore();
-                    }
-
-                    ctx.fillStyle = "#ffffff";
-                    ctx.font = "bold 14px system-ui, sans-serif";
-                    ctx.textAlign = "center";
-                    ctx.fillText(p.name || "Anonymous", px, py - SPRITE_SIZE / 2 - 6);
-
-                    if (p.gold > 0) {
-                        ctx.fillStyle = "#ffd700";
-                        ctx.font = "bold 26px system-ui, sans-serif";
-                        ctx.textAlign = "center";
-                        ctx.fillText(`Gold: ${p.gold}`, px, py + SPRITE_SIZE / 2 + 16);
+                    const blinkFrequency = 25;
+                    if (Math.sin(Date.now() / blinkFrequency) < 0) {
+                        alpha *= 0.2;
                     }
                 }
+
+                ctx.globalAlpha = alpha;
+                ctx.drawImage(shieldImg, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+                
+                ctx.restore();
+            }
+
+            const dx = p.dx ?? 0;
+            const dy = p.dy ?? 0;
+
+            if (dx !== 0 || dy !== 0) {
+                const angle = Math.atan2(dy, dx);
+
+                ctx.save();
+                ctx.translate(px, py); 
+                ctx.rotate(angle);     
+
+                ctx.fillStyle = "#ff3333";
+                ctx.beginPath();
+                ctx.moveTo(SPRITE_SIZE / 2 + 10, 0);
+                ctx.lineTo(SPRITE_SIZE / 2 - 2, -7);
+                ctx.lineTo(SPRITE_SIZE / 2 - 2, 7);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 14px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(p.name || "Anonymous", px, py - SPRITE_SIZE / 2 - 6);
+
+            if (p.gold > 0) {
+                ctx.fillStyle = "#ffd700";
+                ctx.font = "bold 26px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(`Gold: ${p.gold}`, px, py + SPRITE_SIZE / 2 + 16);
             }
         }
+    }
+}
 
         function drawAttackFX() {
             const FIREBALL_LENGTH = 4000 * WORLD_SCALE;
@@ -210,6 +227,23 @@ export default function Host() {
 
                 ctx.restore();
             }
+        }
+
+        function declareWinner(){
+
+            if (!winnerRef.current) return;
+
+            ctx.save();
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 48px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            const winnerText = winnerRef.current === "shark" ? "Shark Team Wins!" : "Cat Team Wins!";
+            ctx.fillText(winnerText, canvas.width / 2, canvas.height / 2);
+            ctx.restore();
+
         }
 
         function loop(now: number) {

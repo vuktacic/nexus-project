@@ -12,7 +12,7 @@ function clampJoystick(dx: number, dy: number, max: number) {
 
 // phone controls
 const SHIELD_BETA_THRESHOLD = 60;
-const SHIELD_DURATION = 500;
+export const SHIELD_DURATION = 500;
 const SHIELD_COOLDOWN = 800;
 
 const ATTACK_THRESHOLD = 7;
@@ -67,7 +67,6 @@ function InteractiveInstructionButtons({
                 zIndex: 10,
             }}
         >
-            {/* ATTACK IMAGE BUTTON */}
             <button
                 onClick={handleAttack}
                 disabled={attackCooldown || shieldActive}
@@ -95,7 +94,6 @@ function InteractiveInstructionButtons({
                 />
             </button>
 
-            {/* SHIELD IMAGE BUTTON */}
             <button
                 onClick={handleShieldClick}
                 disabled={shieldActive}
