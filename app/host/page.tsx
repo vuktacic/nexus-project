@@ -635,7 +635,7 @@ export default function Host() {
                 setEndScreen(true);
                 drawEndScreen(true);
             }
-            if (teamRef.current.shark == 0){
+            else if (teamRef.current.shark == 0){
                 setEndScreen(true);
                 drawEndScreen(false);
             }
