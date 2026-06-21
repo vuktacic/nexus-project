@@ -5,10 +5,6 @@ import geckos from "@geckos.io/server";
 const app = express();
 const server = http.createServer(app);
 const io = geckos({
-  cors: {
-    allowAuthorization: true,
-    origin: "*",
-  },
   address: "165.22.144.193",
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
