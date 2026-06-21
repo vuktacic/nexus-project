@@ -370,7 +370,7 @@ export default function Host() {
 
                 if (p.shield) {
                     ctx.save();
-                    ctx.drawImage(shieldImg, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE * 1.2, SPRITE_SIZE * 1.2);
+                    ctx.drawImage(shieldImg, px - SPRITE_SIZE / 1.5, py - SPRITE_SIZE / 1.5, SPRITE_SIZE, SPRITE_SIZE);
 
                     ctx.restore();
                 }
