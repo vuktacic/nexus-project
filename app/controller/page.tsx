@@ -211,6 +211,9 @@ export default function Controller() {
         setTimeout(
             () => {
                 shieldCooldownRef.current = false;
+                if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                navigator.vibrate([50]);
+                }
             },
             SHIELD_DURATION + SHIELD_COOLDOWN,
         );
@@ -237,8 +240,15 @@ export default function Controller() {
         channelRef.current.emit("attack");
         attackCooldownRef.current = true;
 
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+            navigator.vibrate([10, 20, 30, 40, 50]); //attack
+        }
+
         setTimeout(() => {
             attackCooldownRef.current = false;
+            if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                navigator.vibrate([80]);
+            }
         }, ATTACK_COOLDOWN_TIME);
     }
 
