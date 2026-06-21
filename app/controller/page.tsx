@@ -506,7 +506,7 @@ export default function Controller() {
                 }}
                 style={{
                     position: "absolute",
-                    top: "-20px",
+                    top: "50px",
                     right: "20px",
                     zIndex: 30,
                     background: "rgba(255, 255, 255, 0.1)",
