@@ -389,7 +389,7 @@ export default function Host() {
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = "#7a0000";
                     // ctx.fillStyle = "#ff5252";
-                    ctx.fillStyle = getRandomColor();
+                    ctx.fillStyle = "#ff5252";
                     ctx.beginPath();
                     ctx.moveTo(SPRITE_SIZE / 2 + 12, 0);
                     ctx.lineTo(SPRITE_SIZE / 2 - 3, -8);
