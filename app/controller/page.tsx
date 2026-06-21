@@ -506,7 +506,7 @@ export default function Controller() {
                 }}
                 style={{
                     position: "absolute",
-                    top: "20px",
+                    top: "-20px",
                     right: "20px",
                     zIndex: 30,
                     background: "rgba(255, 255, 255, 0.1)",
@@ -523,7 +523,6 @@ export default function Controller() {
                     outline: "none",
                 }}
             >
-                ⚙️
             </button>
 
             {/* Slider Settings Overlay Panel */}
