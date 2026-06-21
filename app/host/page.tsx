@@ -21,7 +21,7 @@ export default function Host() {
         import("@geckos.io/client")
             .then((module) => {
                 const geckos = module.default;
-                channel = geckos({ url: backendUrl, port: isHttps ? null : 3001 });
+                channel = geckos({ url: backendUrl, port: isHttps ? undefined : 3001 });
 
                 channel.onConnect((error: any) => {
                     if (error) {
