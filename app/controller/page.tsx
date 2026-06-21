@@ -11,37 +11,36 @@ function clampJoystick(dx: number, dy: number, max: number) {
     return { dx: dx * scale, dy: dy * scale };
 }
 
-// =========================
-// CONFIG
-// =========================
+// =========================================================================
+// CONFIG (Tweak these coordinates to layer perfectly over your background)
+// =========================================================================
 
 // mobile background / layout toggle
 const MOBILE_BREAKPOINT = 900;
 
-// join screen placement (ONLY used on the join screen)
+// Name Input Field Coordinates
 const NAME_INPUT_X = 60;
 const NAME_INPUT_Y = 360;
 const NAME_INPUT_WIDTH = 260;
 const NAME_INPUT_HEIGHT = 46;
 
+// Join Button Coordinates
 const JOIN_BUTTON_X = 60;
 const JOIN_BUTTON_Y = 420;
 const JOIN_BUTTON_WIDTH = 260;
 const JOIN_BUTTON_HEIGHT = 50;
 
-// optional status text placement
+// Status Text Coordinates
 const STATUS_X = 60;
 const STATUS_Y = 485;
 const STATUS_WIDTH = 260;
 
-// phone controls
+// Phone Game Settings
 const SHIELD_BETA_THRESHOLD = 60;
 const SHIELD_DURATION = 3000;
-
 const ATTACK_THRESHOLD = 7;
 const ATTACK_COOLDOWN_TIME = 300;
 const GYRO_POLL_MS = 50;
-
 const MOTION_DETECTION_TIMEOUT_MS = 1500;
 
 function ActionButtons({
@@ -174,7 +173,6 @@ export default function Controller() {
 
     const { orientation, motion, permissionNeeded, requestPermission } = useDeviceMotion();
 
-    // detect mobile / small screen
     useEffect(() => {
         const updateIsMobile = () => {
             if (typeof window === "undefined") return;
@@ -347,7 +345,6 @@ export default function Controller() {
         }
 
         const isHttps = backendUrl.startsWith("https://");
-        console.log(`[CLIENT LOG] Connecting to ${backendUrl}`);
         setStatusMsg(`Connecting to ${backendUrl}...`);
 
         import("@geckos.io/client")
@@ -360,25 +357,22 @@ export default function Controller() {
 
                 channel.onConnect((error) => {
                     if (error) {
-                        console.error("[CLIENT LOG] Connection error:", error);
                         setStatusMsg(`Connection error: ${error.message}`);
                         return;
                     }
 
-                    console.log(`[CLIENT LOG] Connected! ID: ${channel.id}`);
                     channel.emit("join", { name: playerName });
                     channelRef.current = channel;
                     setJoined(true);
                 });
 
                 channel.onDisconnect(() => {
-                    console.warn("[CLIENT LOG] Disconnected.");
                     setJoined(false);
                     setStatusMsg("Disconnected from server");
                 });
             })
             .catch((err) => {
-                console.error("[CLIENT LOG] Failed to load geckos client:", err);
+                console.error(err);
                 setStatusMsg("Failed to initialize game client package");
             });
     }
@@ -427,9 +421,9 @@ export default function Controller() {
         sendRef.current.dy = 0;
     }
 
-    // =========================
-    // JOIN SCREEN
-    // =========================
+    // ==========================================
+    // JOIN SCREEN (Stripped of weird formatting)
+    // ==========================================
     if (!joined) {
         return (
             <div
@@ -438,7 +432,7 @@ export default function Controller() {
                     width: "100vw",
                     height: "100vh",
                     overflow: "hidden",
-                    background: "#000",
+                    backgroundColor: "#000000",
                     backgroundImage: isMobile ? `url(${backgroundImage.src})` : "none",
                     backgroundSize: isMobile ? "contain" : "auto",
                     backgroundPosition: "center center",
