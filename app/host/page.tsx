@@ -104,6 +104,9 @@ export default function Host() {
         const fireballImg = new Image();
         fireballImg.src = "/assets/objects/fireball-removebg-preview.png";
 
+        const coinImg = new Image();
+        coinImg.src = "/assets/ui/coin-removebg-preview.png";
+
         const bgImg = new Image();
         bgImg.src = "/assets/map/combined_sides.png";
 
@@ -197,6 +200,23 @@ export default function Host() {
             ctx.restore();
         }
 
+        function drawGoldAmount(x: number, y: number, amount: number, size: number, align: "left" | "right" | "center") {
+            const text = `${amount}`;
+            ctx.font = `800 ${size}px ${FONT_DISPLAY}`;
+            const textW = ctx.measureText(text).width;
+            const iconSize = size * 1.2;
+            const gap = size * 0.22;
+            const blockW = iconSize + gap + textW;
+
+            let blockLeft: number;
+            if (align === "left") blockLeft = x;
+            else if (align === "right") blockLeft = x - blockW;
+            else blockLeft = x - blockW / 2;
+
+            ctx.drawImage(coinImg, blockLeft, y - iconSize * 0.82, iconSize, iconSize);
+            drawComicText(text, blockLeft + iconSize + gap, y, size, GOLD.fill, "#3a2a00", "left", Math.max(2.5, size * 0.16));
+        }
+
         // ---------- gameplay fx ----------
 
         function updateFX(dt: number) {
@@ -244,7 +264,7 @@ export default function Host() {
             const badgeH = 56;
             const badgeW = 230;
 
-            function badge(theme: typeof TEAM_THEME.shark, gold: number, align: "left" | "right") {
+            function badge(theme: typeof TEAM_THEME.shark, mascotImg: HTMLImageElement, gold: number, align: "left" | "right") {
                 const x = align === "left" ? padding : canvas.width - padding - badgeW;
                 const y = padding;
 
@@ -267,13 +287,19 @@ export default function Host() {
                 ctx.strokeStyle = "rgba(255,255,255,0.6)";
                 ctx.stroke();
 
+                const iconCX = align === "left" ? x + badgeH / 2 : x + badgeW - badgeH / 2;
+                const iconCY = y + badgeH / 2;
+                const iconR = badgeH / 2 - 4;
+
                 ctx.save();
-                ctx.font = `${badgeH * 0.55}px serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                const iconX = align === "left" ? x + badgeH / 2 : x + badgeW - badgeH / 2;
-                ctx.fillText(theme.emoji, iconX, y + badgeH / 2 + 2);
+                ctx.beginPath();
+                ctx.arc(iconCX, iconCY, iconR, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(255,255,255,0.85)";
+                ctx.fill();
                 ctx.restore();
+
+                const spriteSize = iconR * 1.8;
+                ctx.drawImage(mascotImg, iconCX - spriteSize / 2, iconCY - spriteSize / 2, spriteSize, spriteSize);
 
                 const textX = align === "left" ? x + badgeH : x + badgeW - badgeH;
                 ctx.save();
@@ -284,20 +310,11 @@ export default function Host() {
                 ctx.fillText(theme.label, textX, y + badgeH * 0.32);
                 ctx.restore();
 
-                drawComicText(
-                    `🪙 ${gold}`,
-                    textX,
-                    y + badgeH * 0.78,
-                    20,
-                    GOLD.fill,
-                    "#3a2a00",
-                    align === "left" ? "left" : "right",
-                    3.5
-                );
+                drawGoldAmount(textX, y + badgeH * 0.78, gold, 20, align === "left" ? "left" : "right");
             }
 
-            badge(TEAM_THEME.shark, teamRef.current.shark, "left");
-            badge(TEAM_THEME.cat, teamRef.current.cat, "right");
+            badge(TEAM_THEME.shark, sharkImg, teamRef.current.shark, "left");
+            badge(TEAM_THEME.cat, catImg, teamRef.current.cat, "right");
         }
 
         function drawPlayers() {
@@ -407,7 +424,7 @@ export default function Host() {
                 drawComicText(label, px, tagY + tagH * 0.72, 14, "#ffffff", "#000000", "center", 2.5);
 
                 if (p.gold > 0) {
-                    drawComicText(`🪙${p.gold}`, px, py + SPRITE_SIZE / 2 + 24, 20, GOLD.fill, "#5a3d00");
+                    drawGoldAmount(px, py + SPRITE_SIZE / 2 + 24, p.gold, 20, "center");
                 }
             }
         }
@@ -589,4 +606,4 @@ export default function Host() {
             <canvas ref={canvasRef} style={{ width: "100vw", height: "100vh", display: "block" }} />
         </div>
     );
-}
+}   

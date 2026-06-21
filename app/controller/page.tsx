@@ -107,7 +107,7 @@ function InteractiveInstructionButtons({
             >
                 <img
                     src="/assets/ui/shield_ins.png"
-                    alt="SLAM to shield"
+                    alt="turn to shield"
                     style={{
                         width: 90,
                         height: 90,
