@@ -9,7 +9,11 @@ export default function Controller() {
     const channelRef = useRef<any>(null);
 
     function connectAndJoin(playerName: string) {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://165.22.144.193";
+        let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://165.22.144.193";
+        // Ensure the URL is absolute by prepending http:// if protocol is missing
+        if (backendUrl && !backendUrl.startsWith("http://") && !backendUrl.startsWith("https://")) {
+            backendUrl = `http://${backendUrl}`;
+        }
         console.log(`[CLIENT LOG] Attempting connection. Target URL: ${backendUrl}, Port: 3001`);
         setStatusMsg(`Connecting to ${backendUrl}:3001...`);
         
