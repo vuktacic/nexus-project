@@ -6,7 +6,6 @@ import { useState, useEffect, useRef } from "react";
 
 import { useDeviceMotion } from "../hooks/useDeviceMotion";
 
-import backgroundImage from '@/public/assets/ui/loading_screen.png'
 
 
 
@@ -752,7 +751,6 @@ export default function Controller() {
 
 
 
-        // Track angle for attack direction
 
         const len = Math.hypot(clamped.dx, clamped.dy);
 
@@ -804,7 +802,6 @@ export default function Controller() {
 
                     color: "#fff",
 
-                    backgroundImage: `url(${backgroundImage})`
 
                 }}
 

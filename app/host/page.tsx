@@ -131,7 +131,6 @@ export default function Host() {
 
                     console.log(`[HOST LOG] Drawing player ${p.name} at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) with gold: ${p.gold}`);
 
-                    // Highlight the team's top-gold player with the MVP sprite
                     const isGoldLeader = p.gold > 0 && (p.shark ? p === sharkLeader : p === catLeader);
                     if (isGoldLeader) {
                         img = p.shark ? mvpSharkImg : mvpCatImg;
