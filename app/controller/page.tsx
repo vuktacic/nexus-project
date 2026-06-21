@@ -402,6 +402,7 @@ export default function Controller() {
     }
 
     if (!joined) {
+        // join screen
         return (
             <div
                 style={{
@@ -498,7 +499,6 @@ export default function Controller() {
                 fontFamily: "system-ui, sans-serif",
             }}
         >
-            {/* Settings Toggle Button */}
             <button
                 onClick={(e) => {
                     e.stopPropagation();
@@ -525,7 +525,6 @@ export default function Controller() {
             >
             </button>
 
-            {/* Slider Settings Overlay Panel */}
             {showSettings && (
                 <div
                     className="settings-panel"

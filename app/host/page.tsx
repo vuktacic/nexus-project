@@ -11,8 +11,8 @@ const FX_MAX_TIME = 0.25;
 const FONT_DISPLAY = "'Baloo 2', 'Comic Sans MS', 'Arial Rounded MT Bold', system-ui, sans-serif";
 
 const TEAM_THEME = {
-    shark: { primary: "#1fb6ff", dark: "#0a5c8a", glow: "#bdf3ff", label: "SHARKS", emoji: "🦈" },
-    cat: { primary: "#ff7a59", dark: "#9c3b1f", glow: "#ffe1cf", label: "CATS", emoji: "🐱" },
+    shark: { primary: "#1fb6ff", dark: "#0a5c8a", glow: "#bdf3ff", label: "SHARKS"},
+    cat: { primary: "#ff7a59", dark: "#9c3b1f", glow: "#ffe1cf", label: "CATS"},
 };
 
 const GOLD = { fill: "#ffd54a", stroke: "#9a6b00" };
@@ -394,7 +394,6 @@ export default function Host() {
                     ctx.lineJoin = "round";
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = "#7a0000";
-                    // ctx.fillStyle = "#ff5252";
                     ctx.fillStyle = "#ff5252";
                     ctx.beginPath();
                     ctx.moveTo(SPRITE_SIZE / 2 + 12, 0);
@@ -604,7 +603,7 @@ export default function Host() {
             ctx.restore();
 
             const bannerY = cy - glowR - 30;
-            drawComicText(`${theme.emoji} ${theme.label} WIN! ${theme.emoji}`, cx, bannerY, 52, "#ffffff", theme.dark, "center", 9);
+            drawComicText(`${theme.label} WIN!`, cx, bannerY, 52, "#ffffff", theme.dark, "center", 9);
 
             drawComicText("YAYYY VICTORY gg!", cx, cy + glowR + 70, 26, GOLD.fill, "#5a3d00", "center", 5);
         }
