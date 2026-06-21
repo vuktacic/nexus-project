@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useDeviceMotion } from "../hooks/useDeviceMotion";
-import backgroundImage from "@/public/assets/ui/loading_screen.png";
+
 
 function clampJoystick(dx: number, dy: number, max: number) {
     const dist = Math.hypot(dx, dy);
@@ -11,32 +11,12 @@ function clampJoystick(dx: number, dy: number, max: number) {
     return { dx: dx * scale, dy: dy * scale };
 }
 
-// =========================
-// CONFIG
-// =========================
-
-// mobile background / layout toggle
-const MOBILE_BREAKPOINT = 900;
-
-// join screen placement (ONLY used on the join screen)
-const NAME_INPUT_X = 60;
-const NAME_INPUT_Y = 360;
-const NAME_INPUT_WIDTH = 260;
-const NAME_INPUT_HEIGHT = 46;
-
-const JOIN_BUTTON_X = 60;
-const JOIN_BUTTON_Y = 420;
-const JOIN_BUTTON_WIDTH = 260;
-const JOIN_BUTTON_HEIGHT = 50;
-
-// optional status text placement
-const STATUS_X = 60;
-const STATUS_Y = 485;
-const STATUS_WIDTH = 260;
-
 // phone controls
+
 const SHIELD_BETA_THRESHOLD = 60;
 const SHIELD_DURATION = 3000;
+const SHIELD_COOLDOWN_TIME = 1000;
+const SHIELD_MOVE_SPEED_MULTIPLIER = 0.4; // movement speed while shield is up
 
 const ATTACK_THRESHOLD = 7;
 const ATTACK_COOLDOWN_TIME = 300;
@@ -44,23 +24,23 @@ const GYRO_POLL_MS = 50;
 
 const MOTION_DETECTION_TIMEOUT_MS = 1500;
 
-function ActionButtons({
-    channelRef,
+
+function ActionImageButtons({
     shieldActive,
+    shieldCooldown,
+    attackCooldown,
+    onAttack,
     onShield,
 }: {
-    channelRef: React.MutableRefObject<any>;
     shieldActive: boolean;
+    shieldCooldown: boolean;
+    attackCooldown: boolean;
+    onAttack: () => void;
     onShield: () => void;
 }) {
-    const [attackCooldown, setAttackCooldown] = useState(false);
-
-    const handleAttack = () => {
-        if (attackCooldown || shieldActive || !channelRef.current) return;
-        channelRef.current.emit("attack");
-        setAttackCooldown(true);
-        setTimeout(() => setAttackCooldown(false), ATTACK_COOLDOWN_TIME);
-    };
+    const attackDisabled = attackCooldown || shieldActive;
+    // Shield button stays tappable while active so the player can cancel it early.
+    const shieldDisabled = !shieldActive && shieldCooldown;
 
     return (
         <div
@@ -76,92 +56,78 @@ function ActionButtons({
             }}
         >
             <button
-                onClick={handleAttack}
-                disabled={attackCooldown || shieldActive}
+                onClick={onAttack}
+                disabled={attackDisabled}
+                aria-label="Attack"
                 style={{
-                    padding: "14px 28px",
-                    borderRadius: "10px",
+                    padding: 0,
                     border: "none",
-                    background: attackCooldown || shieldActive ? "#333" : "#f44336",
-                    color: attackCooldown || shieldActive ? "#666" : "#fff",
-                    fontWeight: "bold",
-                    cursor: attackCooldown || shieldActive ? "not-allowed" : "pointer",
-                    opacity: attackCooldown || shieldActive ? 0.6 : 1,
-                    fontSize: "15px",
-                    minWidth: "120px",
+                    background: "transparent",
+                    cursor: attackDisabled ? "not-allowed" : "pointer",
                 }}
             >
-                {attackCooldown ? "ATTACK [CD]" : "ATTACK"}
+                <img
+                    src="/assets/ui/stab_ins.png"
+                    alt="push phone toward right direction"
+                    style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: "10px",
+                        objectFit: "contain",
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.15)",
+                        opacity: attackDisabled ? 0.35 : 1,
+                        filter: attackDisabled ? "grayscale(1)" : "none",
+                        transition: "opacity 0.15s, filter 0.15s",
+                    }}
+                />
             </button>
 
             <button
                 onClick={onShield}
-                disabled={shieldActive}
+                disabled={shieldDisabled}
+                aria-label="Shield"
                 style={{
-                    padding: "14px 28px",
-                    borderRadius: "10px",
+                    padding: 0,
                     border: "none",
-                    background: shieldActive ? "#333" : "#00bcd4",
-                    color: shieldActive ? "#666" : "#fff",
-                    fontWeight: "bold",
-                    cursor: shieldActive ? "not-allowed" : "pointer",
-                    opacity: shieldActive ? 0.6 : 1,
-                    fontSize: "15px",
-                    minWidth: "120px",
+                    background: "transparent",
+                    cursor: shieldDisabled ? "not-allowed" : "pointer",
                 }}
             >
-                {shieldActive ? "SHIELD [ON]" : "SHIELD"}
+                <img
+                    src="/assets/ui/shield_ins.png"
+                    alt="SLAM to shield"
+                    style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: "10px",
+                        objectFit: "contain",
+                        background: shieldActive ? "rgba(0,188,212,0.18)" : "rgba(255,255,255,0.05)",
+                        border: shieldActive
+                            ? "1px solid rgba(0,188,212,0.8)"
+                            : "1px solid rgba(255,255,255,0.15)",
+                        opacity: shieldDisabled ? 0.35 : 1,
+                        filter: shieldDisabled ? "grayscale(1)" : "none",
+                        transition: "opacity 0.15s, filter 0.15s, background 0.15s, border 0.15s",
+                    }}
+                />
             </button>
         </div>
     );
 }
 
-function MotionInstructionImages() {
-    return (
-        <div
-            style={{
-                position: "absolute",
-                bottom: 40,
-                left: 0,
-                right: 0,
-                display: "flex",
-                justifyContent: "center",
-                gap: "16px",
-                zIndex: 10,
-                pointerEvents: "none",
-            }}
-        >
-            <img
-                src="/assets/ui/stab_ins.png"
-                alt="push phone toward right direction"
-                style={{
-                    width: 120,
-                    height: 120,
-                    objectFit: "contain",
-                }}
-            />
-            <img
-                src="/assets/ui/shield_ins.png"
-                alt="SLAM to shield"
-                style={{
-                    width: 120,
-                    height: 120,
-                    objectFit: "contain",
-                }}
-            />
-        </div>
-    );
-}
 
 export default function Controller() {
     const [name, setName] = useState("");
     const [joined, setJoined] = useState(false);
     const [statusMsg, setStatusMsg] = useState("");
     const [shieldActive, setShieldActive] = useState(false);
+    const [shieldCooldown, setShieldCooldown] = useState(false);
+    const [attackCooldown, setAttackCooldown] = useState(false);
     const channelRef = useRef<any>(null);
+    const shieldActiveRef = useRef(false);
 
     const [motionAvailable, setMotionAvailable] = useState<boolean | null>(null);
-    const [isMobile, setIsMobile] = useState(false);
 
     const [knob, setKnob] = useState({ x: 0, y: 0 });
     const joystickRef = useRef({
@@ -173,18 +139,6 @@ export default function Controller() {
     });
 
     const { orientation, motion, permissionNeeded, requestPermission } = useDeviceMotion();
-
-    // detect mobile / small screen
-    useEffect(() => {
-        const updateIsMobile = () => {
-            if (typeof window === "undefined") return;
-            setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
-        };
-
-        updateIsMobile();
-        window.addEventListener("resize", updateIsMobile);
-        return () => window.removeEventListener("resize", updateIsMobile);
-    }, []);
 
     useEffect(() => {
         if (permissionNeeded) {
@@ -199,7 +153,7 @@ export default function Controller() {
     }, [permissionNeeded, requestPermission]);
 
     useEffect(() => {
-        if (motionAvailable !== null) return;
+        if (motionAvailable !== null) return; // already decided
 
         if (orientation && motion) {
             setMotionAvailable(true);
@@ -213,11 +167,7 @@ export default function Controller() {
         return () => clearTimeout(timeout);
     }, [orientation, motion, motionAvailable]);
 
-    const debugRef = useRef<{ orientation: any; motion: any }>({
-        orientation: null,
-        motion: null,
-    });
-
+    const debugRef = useRef<{ orientation: any; motion: any }>({ orientation: null, motion: null });
     useEffect(() => {
         debugRef.current = { orientation, motion };
     }, [orientation, motion]);
@@ -232,11 +182,29 @@ export default function Controller() {
     });
 
     const shieldTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const shieldCooldownRef = useRef(false);
+    const shieldCooldownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const attackCooldownRef = useRef(false);
+
+    useEffect(() => {
+        shieldActiveRef.current = shieldActive;
+    }, [shieldActive]);
+
+    function startShieldCooldown() {
+        shieldCooldownRef.current = true;
+        setShieldCooldown(true);
+
+        shieldCooldownTimeoutRef.current = setTimeout(() => {
+            shieldCooldownRef.current = false;
+            setShieldCooldown(false);
+            shieldCooldownTimeoutRef.current = null;
+        }, SHIELD_COOLDOWN_TIME);
+    }
 
     function triggerShield() {
         if (!channelRef.current) return;
         if (shieldTimeoutRef.current) return;
+        if (shieldCooldownRef.current) return;
 
         channelRef.current.emit("shield", { shield: true });
         setShieldActive(true);
@@ -245,6 +213,7 @@ export default function Controller() {
             channelRef.current?.emit("shield", { shield: false });
             setShieldActive(false);
             shieldTimeoutRef.current = null;
+            startShieldCooldown();
         }, SHIELD_DURATION);
     }
 
@@ -256,6 +225,7 @@ export default function Controller() {
             }
             channelRef.current?.emit("shield", { shield: false });
             setShieldActive(false);
+            startShieldCooldown();
         } else {
             triggerShield();
         }
@@ -263,14 +233,16 @@ export default function Controller() {
 
     function triggerAttack() {
         if (!channelRef.current) return;
-        if (shieldTimeoutRef.current) return;
+        if (shieldTimeoutRef.current) return; // can't attack w/ shield on
         if (attackCooldownRef.current) return;
 
         channelRef.current.emit("attack");
         attackCooldownRef.current = true;
+        setAttackCooldown(true);
 
         setTimeout(() => {
             attackCooldownRef.current = false;
+            setAttackCooldown(false);
         }, ATTACK_COOLDOWN_TIME);
     }
 
@@ -292,15 +264,19 @@ export default function Controller() {
         ) {
             const betaDelta = Math.abs(currentOrientation.beta - prev.beta);
             const gammaDelta = Math.abs(currentOrientation.gamma - prev.gamma);
+            const motionDeltaX = currentMotion.x - prev.motionX;
             const motionDeltaZ = currentMotion.z - prev.motionZ;
+            const motionDeltaY = currentMotion.y - prev.motionY;
             const accelZDelta = Math.abs(motionDeltaZ);
-
+            const accelYDelta = Math.abs(motionDeltaY);
+            
             if (betaDelta <= 8 && accelZDelta > ATTACK_THRESHOLD) {
                 triggerAttack();
-            } else if (gammaDelta >= SHIELD_BETA_THRESHOLD) {
+            }
+            else if (gammaDelta >= SHIELD_BETA_THRESHOLD) {
                 triggerShield();
             }
-        }
+        } 
 
         prev.alpha = currentOrientation.alpha;
         prev.beta = currentOrientation.beta;
@@ -320,6 +296,7 @@ export default function Controller() {
     useEffect(() => {
         return () => {
             if (shieldTimeoutRef.current) clearTimeout(shieldTimeoutRef.current);
+            if (shieldCooldownTimeoutRef.current) clearTimeout(shieldCooldownTimeoutRef.current);
         };
     }, []);
 
@@ -330,22 +307,19 @@ export default function Controller() {
         if (!joined) return;
 
         const interval = setInterval(() => {
-            channelRef.current?.emit("input", sendRef.current);
-        }, 50);
+            const { dx, dy } = sendRef.current;
+            const speedMultiplier = shieldActiveRef.current ? SHIELD_MOVE_SPEED_MULTIPLIER : 1;
+            channelRef.current?.emit("input", { dx: dx * speedMultiplier, dy: dy * speedMultiplier });
+        }, 50); // 20 updates/sec
 
         return () => clearInterval(interval);
     }, [joined]);
 
     function connectAndJoin(playerName: string) {
         let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://165.22.144.193";
-        if (
-            backendUrl &&
-            !backendUrl.startsWith("http://") &&
-            !backendUrl.startsWith("https://")
-        ) {
+        if (backendUrl && !backendUrl.startsWith("http://") && !backendUrl.startsWith("https://")) {
             backendUrl = `http://${backendUrl}`;
         }
-
         const isHttps = backendUrl.startsWith("https://");
         console.log(`[CLIENT LOG] Connecting to ${backendUrl}`);
         setStatusMsg(`Connecting to ${backendUrl}...`);
@@ -353,10 +327,7 @@ export default function Controller() {
         import("@geckos.io/client")
             .then((module) => {
                 const geckos = module.default;
-                const channel = geckos({
-                    url: backendUrl,
-                    port: (isHttps ? null : 3001) as number,
-                });
+                const channel = geckos({ url: backendUrl, port: (isHttps ? null : 3001) as number });
 
                 channel.onConnect((error) => {
                     if (error) {
@@ -364,7 +335,6 @@ export default function Controller() {
                         setStatusMsg(`Connection error: ${error.message}`);
                         return;
                     }
-
                     console.log(`[CLIENT LOG] Connected! ID: ${channel.id}`);
                     channel.emit("join", { name: playerName });
                     channelRef.current = channel;
@@ -392,8 +362,6 @@ export default function Controller() {
 
     function onPointerDown(e: React.PointerEvent) {
         if ((e.target as HTMLElement).closest("button")) return;
-        if ((e.target as HTMLElement).closest("input")) return;
-
         joystickRef.current.active = true;
         joystickRef.current.pointerId = e.pointerId;
         joystickRef.current.originX = e.clientX;
@@ -413,6 +381,7 @@ export default function Controller() {
         sendRef.current.dx = clamped.dx / MAX;
         sendRef.current.dy = clamped.dy / MAX;
 
+        // Track angle for attack direction
         const len = Math.hypot(clamped.dx, clamped.dy);
         if (len > 0.01) {
             angleRef.current = Math.atan2(clamped.dy, clamped.dx);
@@ -427,32 +396,40 @@ export default function Controller() {
         sendRef.current.dy = 0;
     }
 
-    // =========================
-    // JOIN SCREEN
-    // =========================
     if (!joined) {
         return (
             <div
                 style={{
-                    position: "relative",
-                    width: "100vw",
                     height: "100vh",
-                    overflow: "hidden",
-                    background: "#000",
-                    backgroundImage: isMobile ? `url(${backgroundImage.src})` : "none",
-                    backgroundSize: isMobile ? "contain" : "auto",
-                    backgroundPosition: "center center",
-                    backgroundRepeat: "no-repeat",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "radial-gradient(circle at center, #1a1a2e 0%, #0f0f1b 100%)",
                     fontFamily: "system-ui, -apple-system, sans-serif",
+                    color: "#fff",
                 }}
             >
                 <form
                     onSubmit={handleJoin}
                     style={{
-                        position: "absolute",
-                        inset: 0,
+                        background: "rgba(255, 255, 255, 0.05)",
+                        backdropFilter: "blur(10px)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        borderRadius: "16px",
+                        padding: "32px",
+                        width: "90%",
+                        maxWidth: "400px",
+                        boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
+                        textAlign: "center",
                     }}
                 >
+                    <h2 style={{ marginBottom: "8px", fontSize: "24px", fontWeight: 700, letterSpacing: "-0.5px" }}>
+                        Enter Arena
+                    </h2>
+                    <p style={{ color: "#8a8a9e", fontSize: "14px", marginBottom: "24px" }}>
+                        Choose your name to join the host lobby.
+                    </p>
+
                     <input
                         type="text"
                         placeholder="Player Name"
@@ -461,65 +438,48 @@ export default function Controller() {
                         maxLength={15}
                         required
                         style={{
-                            position: "absolute",
-                            left: NAME_INPUT_X,
-                            top: NAME_INPUT_Y,
-                            width: NAME_INPUT_WIDTH,
-                            height: NAME_INPUT_HEIGHT,
-                            padding: "0 14px",
-                            boxSizing: "border-box",
-                            borderRadius: "10px",
-                            border: "1px solid rgba(255,255,255,0.25)",
-                            outline: "none",
-                            background: "rgba(0,0,0,0.45)",
+                            width: "100%",
+                            padding: "12px 16px",
+                            borderRadius: "8px",
+                            border: "1px solid rgba(255, 255, 255, 0.2)",
+                            background: "rgba(0, 0, 0, 0.3)",
                             color: "#fff",
                             fontSize: "16px",
+                            marginBottom: "16px",
+                            outline: "none",
+                            boxSizing: "border-box",
                         }}
                     />
 
                     <button
                         type="submit"
                         style={{
-                            position: "absolute",
-                            left: JOIN_BUTTON_X,
-                            top: JOIN_BUTTON_Y,
-                            width: JOIN_BUTTON_WIDTH,
-                            height: JOIN_BUTTON_HEIGHT,
+                            width: "100%",
+                            padding: "12px",
+                            borderRadius: "8px",
                             border: "none",
-                            borderRadius: "10px",
-                            cursor: "pointer",
-                            fontSize: "16px",
-                            fontWeight: 700,
+                            background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
                             color: "#fff",
-                            background: "#4f46e5",
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            cursor: "pointer",
                         }}
                     >
                         Join Game
                     </button>
 
                     {statusMsg && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                left: STATUS_X,
-                                top: STATUS_Y,
-                                width: STATUS_WIDTH,
-                                color: "#ff7b7b",
-                                fontSize: "14px",
-                                lineHeight: 1.3,
-                            }}
-                        >
+                        <p style={{ marginTop: "16px", color: "#f87171", fontSize: "14px" }}>
                             {statusMsg}
-                        </div>
+                        </p>
                     )}
                 </form>
             </div>
         );
     }
 
-    // =========================
-    // IN-GAME CONTROLLER SCREEN
-    // =========================
+    // ── In-game controller screen ─────────────────────────────────────────────
+
     return (
         <div
             onPointerDown={onPointerDown}
@@ -536,15 +496,16 @@ export default function Controller() {
                 fontFamily: "system-ui, sans-serif",
             }}
         >
-            {motionAvailable === false && (
-                <ActionButtons
-                    channelRef={channelRef}
+
+            {motionAvailable !== null && (
+                <ActionImageButtons
                     shieldActive={shieldActive}
+                    shieldCooldown={shieldCooldown}
+                    attackCooldown={attackCooldown}
+                    onAttack={triggerAttack}
                     onShield={handleManualShieldToggle}
                 />
             )}
-
-            {motionAvailable === true && <MotionInstructionImages />}
 
             <div
                 style={{
@@ -556,6 +517,7 @@ export default function Controller() {
                     transform: "translate(-50%, -50%)",
                 }}
             >
+                {/* Base ring */}
                 <div
                     style={{
                         position: "absolute",
@@ -565,7 +527,7 @@ export default function Controller() {
                         border: "2px solid rgba(255,255,255,0.2)",
                     }}
                 />
-
+                {/* Knob */}
                 <div
                     style={{
                         position: "absolute",
@@ -576,9 +538,7 @@ export default function Controller() {
                         borderRadius: "50%",
                         background: "white",
                         transform: "translate(-50%, -50%)",
-                        transition: joystickRef.current.active
-                            ? "none"
-                            : "left 0.15s, top 0.15s",
+                        transition: joystickRef.current.active ? "none" : "left 0.15s, top 0.15s",
                     }}
                 />
             </div>
