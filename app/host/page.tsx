@@ -120,14 +120,14 @@ export default function Host() {
 
             for (const p of playersRef.current) {
                 let img = p.shark ? sharkImg : catImg;
+                const px = p.x * WORLD_SCALE;
+                const py = p.y * WORLD_SCALE;
                 if (!p.alive) {
 
                     img = fireIMG;
 
                 }
                 else {
-                    const px = p.x * WORLD_SCALE;
-                    const py = p.y * WORLD_SCALE;
 
                     console.log(`[HOST LOG] Drawing player ${p.name} at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) with gold: ${p.gold}`);
 
@@ -140,20 +140,20 @@ export default function Host() {
                         img = shieldImg;
                     }
 
-                    ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+                }
+                ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
 
-                    // Player name
-                    ctx.fillStyle = "#ffffff";
-                    ctx.font = "bold 14px system-ui, sans-serif";
+                // Player name
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 14px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(p.name || "Anonymous", px, py - SPRITE_SIZE / 2 - 6);
+
+                if (p.gold > 0) {
+                    ctx.fillStyle = "#ffd700";
+                    ctx.font = "bold 26px system-ui, sans-serif";
                     ctx.textAlign = "center";
-                    ctx.fillText(p.name || "Anonymous", px, py - SPRITE_SIZE / 2 - 6);
-
-                    if (p.gold > 0) {
-                        ctx.fillStyle = "#ffd700";
-                        ctx.font = "bold 12px system-ui, sans-serif";
-                        ctx.textAlign = "center";
-                        ctx.fillText(`Gold: ${p.gold}`, px, py + SPRITE_SIZE / 2 + 16);
-                    }
+                    ctx.fillText(`Gold: ${p.gold}`, px, py + SPRITE_SIZE / 2 + 16);
                 }
 
 

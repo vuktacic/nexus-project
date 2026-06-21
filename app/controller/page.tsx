@@ -12,10 +12,11 @@ function clampJoystick(dx: number, dy: number, max: number) {
 
 // phone controls
 const SHIELD_BETA_THRESHOLD = 60;
-const SHIELD_DURATION = 3000;
+const SHIELD_DURATION = 1500;
+const SHIELD_COOLDOWN = 800;
 
 const ATTACK_THRESHOLD = 7;
-const ATTACK_COOLDOWN_TIME = 300;
+const ATTACK_COOLDOWN_TIME = 500;
 const GYRO_POLL_MS = 50;
 
 const MOTION_DETECTION_TIMEOUT_MS = 1500;
@@ -32,9 +33,8 @@ function InteractiveInstructionButtons({
     onShield,
 }: MotionButtonsProps) {
     const [attackCooldown, setAttackCooldown] = useState(false);
-
+    
     const handleAttack = (e: React.MouseEvent) => {
-        // Prevent event from bubbling up to the full-screen joystick listener
         e.stopPropagation(); 
         if (attackCooldown || shieldActive || !channelRef.current) return;
         
@@ -42,9 +42,15 @@ function InteractiveInstructionButtons({
         setAttackCooldown(true);
         setTimeout(() => setAttackCooldown(false), ATTACK_COOLDOWN_TIME);
     };
-
+    
+    const [shieldCooldown, setShieldCooldown] = useState(false);
     const handleShieldClick = (e: React.MouseEvent) => {
         e.stopPropagation();
+
+        if (shieldActive || shieldCooldown) return;
+        setShieldCooldown(true);
+        setTimeout(() => setShieldCooldown(false), SHIELD_COOLDOWN);
+
         onShield();
     };
 
@@ -184,10 +190,12 @@ export default function Controller() {
 
     const shieldTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const attackCooldownRef = useRef(false);
+    const shieldCooldownRef = useRef(false);
 
     function triggerShield() {
         if (!channelRef.current) return;
         if (shieldTimeoutRef.current) return;
+        if (shieldCooldownRef.current) return;
 
         channelRef.current.emit("shield", { shield: true });
         setShieldActive(true);
@@ -197,6 +205,13 @@ export default function Controller() {
             setShieldActive(false);
             shieldTimeoutRef.current = null;
         }, SHIELD_DURATION);
+
+        setTimeout(
+            () => {
+                shieldCooldownRef.current = false;
+            },
+            SHIELD_DURATION + SHIELD_COOLDOWN,
+        )
     }
 
     function handleManualShieldToggle() {
