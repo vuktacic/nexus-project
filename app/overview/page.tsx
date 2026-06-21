@@ -82,18 +82,6 @@ export default function Overview() {
 
         loadPlayers();
 
-        async function loadGold() {
-            const [sharks, cats] = await Promise.all([
-                getTeamGold(true),
-                getTeamGold(false),
-            ]);
-
-            setSharkGold(sharks ?? 0);
-            setCatGold(cats ?? 0);
-        }
-
-        loadGold();
-
         const channel = supabase
             .channel("overview-game-realtime")
             .on(
@@ -245,6 +233,17 @@ export default function Overview() {
                     screenY - 8
                 );
             }
+
+            if (player.gold > 0) {
+                ctx.fillStyle = "gold";
+                ctx.font = "14px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(
+                    `Gold: ${player.gold}`,
+                    screenX + PLAYER_SIZE / 2,
+                    screenY + PLAYER_SIZE + 16
+                );
+            }
         };
 
         const render = () => {
@@ -264,12 +263,12 @@ export default function Overview() {
             }
 
             ctx.fillText(
-                `Sharks Gold: ${getTeamGold(true)}`,
+                `Sharks Gold: ${sharkGold}`,
                 10,
                 canvas.height - 20
             );
             ctx.fillText(
-                `Cats Gold: ${getTeamGold(false)}`,
+                `Cats Gold: ${catGold}`,
                 canvas.width - 100,
                 canvas.height - 20
             );  
