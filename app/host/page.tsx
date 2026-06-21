@@ -129,11 +129,11 @@ export default function Host() {
                 let img = p.shark ? sharkImg : catImg;
                 const px = p.x * WORLD_SCALE;
                 const py = p.y * WORLD_SCALE;
+                
                 if (!p.alive) {
                     img = fireIMG;
                     ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
                 } else {
-
                     console.log(`[HOST LOG] Drawing player ${p.name} at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) with gold: ${p.gold}`);
 
                     const isGoldLeader = p.gold > 0 && (p.shark ? p === sharkLeader : p === catLeader);
@@ -147,7 +147,27 @@ export default function Host() {
 
                     ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
 
-                    // Player name
+                    const dx = p.dx ?? 0;
+                    const dy = p.dy ?? 0;
+
+                    if (dx !== 0 || dy !== 0) {
+                        const angle = Math.atan2(dy, dx); // arctan of dy and dx
+
+                        ctx.save();
+                        ctx.translate(px, py); 
+                        ctx.rotate(angle);     
+
+                        ctx.fillStyle = "#ff3333";
+                        ctx.beginPath();
+                        ctx.moveTo(SPRITE_SIZE / 2 + 10, 0);
+                        ctx.lineTo(SPRITE_SIZE / 2 - 2, -7);
+                        ctx.lineTo(SPRITE_SIZE / 2 - 2, 7);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        ctx.restore();
+                    }
+
                     ctx.fillStyle = "#ffffff";
                     ctx.font = "bold 14px system-ui, sans-serif";
                     ctx.textAlign = "center";
@@ -177,17 +197,16 @@ export default function Host() {
                 ctx.save();
                 
                 ctx.globalAlpha = alpha;
-
                 ctx.translate(x, y);
-
-                ctx.rotate(fx.angle + Math.PI / 2); 
+                ctx.rotate(fx.angle);
+                ctx.scale(-1, 1);
 
                 ctx.drawImage(
                     fireballImg,
-                    45,                     // Initial X offset directly in front of body 
-                    -FIREBALL_WIDTH / 2,    // Center vertically along heading axis
-                    FIREBALL_LENGTH,        // Width/stretch map length
-                    FIREBALL_WIDTH          // Height map width
+                    -45 - FIREBALL_LENGTH,
+                    -FIREBALL_WIDTH / 2,
+                    FIREBALL_LENGTH,        
+                    FIREBALL_WIDTH          
                 );
 
                 ctx.restore();
@@ -202,7 +221,6 @@ export default function Host() {
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Render background layer safely from pre-cached image object
             if (bgImg.complete) {
                 ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
             }
@@ -210,7 +228,6 @@ export default function Host() {
             drawAttackFX();
             drawPlayers();
 
-            // Render HUD overlay panels
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 18px system-ui, sans-serif";
             ctx.textAlign = "left";
