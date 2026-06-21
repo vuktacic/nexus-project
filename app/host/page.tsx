@@ -67,6 +67,7 @@ export default function Host() {
         const canvas = canvasRef.current!;
         const ctx = canvas.getContext("2d")!;
 
+        // Cache all assets upfront
         const catImg = new Image();
         catImg.src = "/assets/sprites/cat-removebg-preview.png";
         const sharkImg = new Image();
@@ -79,6 +80,12 @@ export default function Host() {
         shieldImg.src = "/assets/objects/box-removebg-preview.png";
         const fireIMG = new Image();
         fireIMG.src = "/assets/objects/fire-removebg-preview.png";
+        
+        const fireballImg = new Image();
+        fireballImg.src = "/assets/objects/fireball-removebg-preview.png";
+
+        const bgImg = new Image();
+        bgImg.src = "/assets/map/combined_sides.png";
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -123,11 +130,9 @@ export default function Host() {
                 const px = p.x * WORLD_SCALE;
                 const py = p.y * WORLD_SCALE;
                 if (!p.alive) {
-
                     img = fireIMG;
-
-                }
-                else {
+                    ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+                } else {
 
                     console.log(`[HOST LOG] Drawing player ${p.name} at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) with gold: ${p.gold}`);
 
@@ -140,29 +145,27 @@ export default function Host() {
                         img = shieldImg;
                     }
 
-                }
-                ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+                    ctx.drawImage(img, px - SPRITE_SIZE / 2, py - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
 
-                // Player name
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 14px system-ui, sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText(p.name || "Anonymous", px, py - SPRITE_SIZE / 2 - 6);
-
-                if (p.gold > 0) {
-                    ctx.fillStyle = "#ffd700";
-                    ctx.font = "bold 26px system-ui, sans-serif";
+                    // Player name
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 14px system-ui, sans-serif";
                     ctx.textAlign = "center";
-                    ctx.fillText(`Gold: ${p.gold}`, px, py + SPRITE_SIZE / 2 + 16);
+                    ctx.fillText(p.name || "Anonymous", px, py - SPRITE_SIZE / 2 - 6);
+
+                    if (p.gold > 0) {
+                        ctx.fillStyle = "#ffd700";
+                        ctx.font = "bold 26px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(`Gold: ${p.gold}`, px, py + SPRITE_SIZE / 2 + 16);
+                    }
                 }
-
-
             }
         }
 
         function drawAttackFX() {
-            const RECT_LENGTH = 4000 * WORLD_SCALE;
-            const RECT_WIDTH = 1200 * WORLD_SCALE;
+            const FIREBALL_LENGTH = 4000 * WORLD_SCALE;
+            const FIREBALL_WIDTH = 1200 * WORLD_SCALE;
 
             for (const fx of fxRef.current) {
                 const progress = fx.t / FX_MAX_TIME;
@@ -172,20 +175,19 @@ export default function Host() {
                 const y = fx.y * WORLD_SCALE;
 
                 ctx.save();
+                
+                ctx.globalAlpha = alpha;
 
-                // Move to attack origin
                 ctx.translate(x, y);
 
-                // Rotate so +X points in the attack direction
                 ctx.rotate(fx.angle);
 
-                // Draw rectangle extending forward from the player
-                ctx.fillStyle = `rgba(255, 80, 80, ${alpha * 0.35})`;
-                ctx.fillRect(
-                    45,                  // offset from player
-                    -RECT_WIDTH / 2,
-                    RECT_LENGTH,
-                    RECT_WIDTH
+                ctx.drawImage(
+                    fireballImg,
+                    45,                     // Initial X offset directly in front of body 
+                    -FIREBALL_WIDTH / 2,    // Center vertically along heading axis
+                    FIREBALL_LENGTH,        // Width/stretch map length
+                    FIREBALL_WIDTH          // Height map width
                 );
 
                 ctx.restore();
@@ -200,14 +202,15 @@ export default function Host() {
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Background from image
-            const bgImg = new Image();
-            bgImg.src = "/assets/map/combined_sides.png";
-            ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+            // Render background layer safely from pre-cached image object
+            if (bgImg.complete) {
+                ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+            }
 
             drawAttackFX();
             drawPlayers();
 
+            // Render HUD overlay panels
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 18px system-ui, sans-serif";
             ctx.textAlign = "left";
