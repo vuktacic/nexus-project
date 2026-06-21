@@ -294,9 +294,10 @@ export default function Controller() {
 
     useEffect(() => {
         if (!joined) return;
-
         const interval = setInterval(() => {
-            channelRef.current?.emit("input", sendRef.current);
+            if (shieldActive.valueOf() !== true){
+                channelRef.current?.emit("input", sendRef.current);
+            }
         }, 50);
 
         return () => clearInterval(interval);
