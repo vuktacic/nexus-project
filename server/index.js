@@ -131,9 +131,9 @@ setInterval(() => {
       continue;
     }
     
-    if (p.shark && p.x < 250) {
+    if (!p.shark && p.x < 250) {
       p.gold += 10 / TICK_RATE;
-    } else if (!p.shark && p.x > 1115) {
+    } else if (p.shark && p.x > 1115) {
       p.gold += 10 / TICK_RATE;
     }
 
