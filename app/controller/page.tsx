@@ -13,8 +13,8 @@ function clampJoystick(dx: number, dy: number, max: number) {
 
 // phone controls
 
-const SHIELD_BETA_THRESHOLD = 8;
-const SHIELD_Z_THRESHOLD = 13;
+const SHIELD_BETA_THRESHOLD = 9;
+const SHIELD_Z_THRESHOLD = 80;
 const SHIELD_DURATION = 3000;
 
 const ATTACK_THRESHOLD = 8;
