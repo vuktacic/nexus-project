@@ -12,60 +12,15 @@ function clampJoystick(dx: number, dy: number, max: number) {
     return { dx: dx * scale, dy: dy * scale };
 }
 
-// ─── Action Buttons (Attack only — Shield is now gyro-driven) ──────────────
-
-function ActionButtons({ channelRef }: { channelRef: React.MutableRefObject<any> }) {
-    const [attackCooldown, setAttackCooldown] = useState(false);
-
-    const ATTACK_COOLDOWN_TIME = 300;
-
-    const handleAttack = () => {
-        if (attackCooldown || !channelRef.current) return;
-        channelRef.current.emit("attack", {});
-        setAttackCooldown(true);
-        setTimeout(() => setAttackCooldown(false), ATTACK_COOLDOWN_TIME);
-    };
-
-    return (
-        <div
-            style={{
-                position: "absolute",
-                bottom: 220,
-                left: 60,
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                width: "140px",
-                zIndex: 10,
-            }}
-        >
-            <button
-                onClick={handleAttack}
-                disabled={attackCooldown}
-                style={{
-                    padding: "12px",
-                    borderRadius: "8px",
-                    border: "none",
-                    background: attackCooldown ? "#333" : "#f44336",
-                    color: attackCooldown ? "#666" : "#fff",
-                    fontWeight: "bold",
-                    cursor: attackCooldown ? "not-allowed" : "pointer",
-                    opacity: attackCooldown ? 0.6 : 1,
-                    fontSize: "14px",
-                }}
-            >
-                {attackCooldown ? "ATTACK [CD]" : "ATTACK"}
-            </button>
-        </div>
-    );
-}
-
 // phone controls
 
 const SHIELD_BETA_THRESHOLD = 6;
 const SHIELD_Z_THRESHOLD = 60;
 const SHIELD_DURATION = 3000;
-const GYRO_POLL_MS = 50; // matches input streaming cadence
+
+const ATTACK_THRESHOLD = 8;
+const ATTACK_COOLDOWN_TIME = 300;
+const GYRO_POLL_MS = 50;
 
 // ─── Main Controller ──────────────────────────────────────────────────────────
 
@@ -102,8 +57,6 @@ export default function Controller() {
         debugRef.current = { orientation, motion };
     }, [orientation, motion]);
 
-    // Previous-sample trackers must survive across calls, so they live in a ref
-    // (plain `let`s in the component body would reset on every render).
     const prevRef = useRef({
         alpha: null as number | null,
         beta: null as number | null,
@@ -113,13 +66,11 @@ export default function Controller() {
         motionZ: null as number | null,
     });
 
-    // Tracks the pending auto-release timer for the gyro-triggered shield so
-    // a fresh shake can't stack multiple overlapping timeouts.
     const shieldTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const attackCooldownRef = useRef(false);
 
     function triggerShield() {
         if (!channelRef.current) return;
-        // Already active: just let the existing timer run (don't restack).
         if (shieldTimeoutRef.current) return;
 
         channelRef.current.emit("shield", { shield: true });
@@ -132,6 +83,18 @@ export default function Controller() {
         }, SHIELD_DURATION);
     }
 
+    function triggerAttack(direction: string) {
+        if (!channelRef.current) return;
+        if (attackCooldownRef.current) return;
+
+        channelRef.current.emit("attack", { direction });
+        attackCooldownRef.current = true;
+
+        setTimeout(() => {
+            attackCooldownRef.current = false;
+        }, ATTACK_COOLDOWN_TIME);
+    }
+
     function gyroAndAccelHandler() {
         const currentOrientation = debugRef.current.orientation;
         const currentMotion = debugRef.current.motion;
@@ -139,10 +102,6 @@ export default function Controller() {
         if (!currentOrientation || !currentMotion) return;
 
         const prev = prevRef.current;
-
-        const motionDeltaX = prev.motionX !== null ? currentMotion.x - prev.motionX : 0;
-        const motionDeltaY = prev.motionY !== null ? currentMotion.y - prev.motionY : 0;
-        const motionDeltaZ = prev.motionZ !== null ? currentMotion.z - prev.motionZ : 0;
 
         if (
             prev.alpha !== null &&
@@ -153,12 +112,28 @@ export default function Controller() {
             prev.motionZ !== null
         ) {
             const betaDelta = Math.abs(currentOrientation.beta - prev.beta);
+            const motionDeltaX = currentMotion.x - prev.motionX;
+            const motionDeltaZ = currentMotion.z - prev.motionZ;
             const accelZDelta = Math.abs(motionDeltaZ);
 
-            // Shield detection: a fast tilt-beta change combined with a sharp
-            // z-axis acceleration spike reads as a "block" gesture.
             if (betaDelta >= SHIELD_BETA_THRESHOLD && accelZDelta >= SHIELD_Z_THRESHOLD) {
                 triggerShield();
+            } else if (betaDelta <= 2) {
+                let direction: string | null = null;
+
+                if (motionDeltaZ > ATTACK_THRESHOLD) {
+                    direction = "north";
+                } else if (motionDeltaZ < -ATTACK_THRESHOLD) {
+                    direction = "south";
+                } else if (motionDeltaX > ATTACK_THRESHOLD) {
+                    direction = "east";
+                } else if (motionDeltaX < -ATTACK_THRESHOLD) {
+                    direction = "west";
+                }
+
+                if (direction) {
+                    triggerAttack(direction);
+                }
             }
         }
 
@@ -170,8 +145,6 @@ export default function Controller() {
         prev.motionZ = currentMotion.z;
     }
 
-    // Poll the gyro/accel handler on its own interval, independent of the
-    // joystick input stream, for as long as we're connected.
     useEffect(() => {
         if (!joined) return;
 
@@ -179,7 +152,6 @@ export default function Controller() {
         return () => clearInterval(gyroInterval);
     }, [joined]);
 
-    // Clean up any pending shield-release timer on unmount.
     useEffect(() => {
         return () => {
             if (shieldTimeoutRef.current) clearTimeout(shieldTimeoutRef.current);
@@ -392,7 +364,7 @@ export default function Controller() {
                     Connected as {name}
                 </p>
                 <p style={{ color: "#888", fontSize: "13px", marginTop: "6px" }}>
-                    Drag joystick to move • Tilt/shake to shield • Use button to attack
+                    Drag joystick to move • Tilt/shake to shield • Shake flat to attack
                 </p>
                 {shieldActive && (
                     <p style={{ color: "#00bcd4", fontSize: "14px", fontWeight: "bold", marginTop: "6px" }}>
@@ -400,9 +372,6 @@ export default function Controller() {
                     </p>
                 )}
             </div>
-
-            {/* Attack button (Shield is now gyro-triggered, no button) */}
-            <ActionButtons channelRef={channelRef} />
 
             {/* Joystick */}
             <div
