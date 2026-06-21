@@ -9,36 +9,39 @@ export default function Controller() {
     const channelRef = useRef<any>(null);
 
     function connectAndJoin(playerName: string) {
-        setStatusMsg("Connecting...");
-        // Dynamic import todd prevent any SSR issues with WebRTC objects in Next.js build
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://165.22.144.193";
+        console.log(`[CLIENT LOG] Attempting connection. Target URL: ${backendUrl}, Port: 3001`);
+        setStatusMsg(`Connecting to ${backendUrl}:3001...`);
+        
+        // Dynamic import to prevent any SSR issues with WebRTC objects in Next.js build
         import("@geckos.io/client")
             .then((module) => {
                 const geckos = module.default;
-                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://165.22.144.193";
                 const channel = geckos({ url: backendUrl, port: 3001 });
 
                 channel.onConnect((error) => {
                     if (error) {
-                        console.error(error.message);
-                        setStatusMsg(`Connection error: ${error.message}`);
+                        console.error("[CLIENT LOG] Connection error object:", error);
+                        setStatusMsg(`Connection error: ${error.message}. Check browser console.`);
                         return;
                     }
 
-                    console.log("Connected to server!");
+                    console.log(`[CLIENT LOG] Connected to server! Channel ID: ${channel.id}`);
+                    console.log(`[CLIENT LOG] Emitting 'join' with name: "${playerName}"`);
                     channel.emit("join", { name: playerName });
                     channelRef.current = channel;
                     setJoined(true);
                 });
 
                 channel.onDisconnect(() => {
-                    console.log("Disconnected from server");
+                    console.warn("[CLIENT LOG] Disconnected from server.");
                     setJoined(false);
-                    setStatusMsg("Disconnected");
+                    setStatusMsg("Disconnected from server");
                 });
             })
             .catch((err) => {
-                console.error("Failed to load geckos client", err);
-                setStatusMsg("Failed to initialize game client");
+                console.error("[CLIENT LOG] Failed to dynamically load geckos client library:", err);
+                setStatusMsg("Failed to initialize game client package");
             });
     }
 
