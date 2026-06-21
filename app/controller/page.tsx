@@ -112,7 +112,7 @@ function MotionInstructionImages() {
             }}
         >
             <img
-                src="/assets/ui/instruction_attack-removebg-preview.png"
+                src="/assets/ui/stab_ins.png"
                 alt="push phone toward right direction"
                 style={{
                     width: 120,
@@ -124,7 +124,7 @@ function MotionInstructionImages() {
                 }}
             />
             <img
-                src="/assets/ui/instruction_box-removebg-preview.png"
+                src="/assets/ui/shield_ins.png"
                 alt="SLAM to shield"
                 style={{
                     width: 120,
