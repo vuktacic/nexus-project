@@ -603,7 +603,7 @@ export default function Host() {
             ctx.restore();
 
             const bannerY = cy - glowR - 30;
-            drawComicText(`${theme.emoji} ${theme.label} WIN! ${theme.emoji}`, cx, bannerY, 52, "#ffffff", theme.dark, "center", 9);
+            drawComicText(`${theme.label} WIN!`, cx, bannerY, 52, "#ffffff", theme.dark, "center", 9);
 
             drawComicText("YAYYY VICTORY gg!", cx, cy + glowR + 70, 26, GOLD.fill, "#5a3d00", "center", 5);
         }
