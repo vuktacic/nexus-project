@@ -1,0 +1,25 @@
+name: One-time history snapshot
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Replace main history with its current file snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          original=872f084b6b59ea75e426cfae1358cdd3835d0fbf
+          base=72f41ed6b5f20b562fff190b41cdbbe091870ec9
+          current=$(git rev-parse HEAD)
+          test "$(git rev-parse HEAD^)" = "$original"
+          old_tree=$(git rev-parse HEAD^{tree})
+          git reset --soft "$base"
+          git -c user.name="Vuk Tacic" -c user.email="vuk.tacic@gmail.com" commit -m "Snapshot Cats vs Sharks hackathon project"
+          test "$(git rev-parse HEAD^{tree})" = "$old_tree"
+          git push --force-with-lease="refs/heads/main:$current" origin HEAD:main
